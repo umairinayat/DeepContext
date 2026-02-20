@@ -1,30 +1,43 @@
-# DeepContext
+<p align="center">
+  <h1 align="center">DeepContext</h1>
+  <p align="center">Hierarchical memory system for AI agents -- async, graph-aware, with hybrid retrieval and memory lifecycle management.</p>
+</p>
 
-Hierarchical memory system for AI agents -- async, graph-aware, with hybrid retrieval and memory lifecycle management.
+<p align="center">
+  <a href="https://github.com/umairinayat/DeepContext/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
+  <a href="https://github.com/umairinayat/DeepContext"><img src="https://img.shields.io/badge/tests-110%20passed-brightgreen.svg" alt="Tests: 110 passed"></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/API-FastAPI-009688.svg" alt="FastAPI"></a>
+  <a href="https://github.com/pgvector/pgvector"><img src="https://img.shields.io/badge/vector%20store-pgvector-orange.svg" alt="pgvector"></a>
+  <a href="https://pydantic-docs.helpmanual.io/"><img src="https://img.shields.io/badge/models-Pydantic%20v2-e92063.svg" alt="Pydantic v2"></a>
+</p>
+
+---
 
 DeepContext gives AI agents persistent, structured memory. Conversations are automatically broken into semantic facts, stored with embeddings, linked in a knowledge graph, and retrieved using a hybrid pipeline that fuses vector similarity, keyword search, and graph traversal.
 
 ## Features
 
-- **Hierarchical memory** -- Working, short-term, and long-term tiers inspired by human cognition
-- **Memory types** -- Semantic (facts), episodic (events), and procedural (how-to) memories
-- **Knowledge graph** -- Entities and relationships extracted from conversations, stored in PostgreSQL (no Neo4j required)
-- **Hybrid retrieval** -- Reciprocal Rank Fusion (RRF) across vector, keyword, and graph search
-- **Memory lifecycle** -- Ebbinghaus forgetting curve decay, consolidation of short-term into long-term, automatic cleanup
-- **Fully async** -- Built on SQLAlchemy async, asyncpg, and AsyncOpenAI
+- **Hierarchical Memory** -- Working, short-term, and long-term tiers inspired by human cognition
+- **Memory Types** -- Semantic (facts), episodic (events), and procedural (how-to) memories
+- **Knowledge Graph** -- Entities and relationships extracted from conversations, stored in PostgreSQL (no Neo4j required)
+- **Hybrid Retrieval** -- Reciprocal Rank Fusion (RRF) across vector, keyword, and graph search
+- **Memory Lifecycle** -- Ebbinghaus forgetting curve decay, consolidation of short-term into long-term, automatic cleanup
+- **Fully Async** -- Built on SQLAlchemy async, asyncpg, and AsyncOpenAI
 - **Multi-user** -- All memories scoped by `user_id`
 - **REST API** -- FastAPI server with 7 endpoints
 - **Pluggable LLM** -- OpenAI and OpenRouter support out of the box
-- **SQLite fallback** -- Works without PostgreSQL for development
+- **SQLite Fallback** -- Works without PostgreSQL for development
+
+---
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Clone and install
-git clone <repo-url>
-cd context-memory
+git clone https://github.com/umairinayat/DeepContext.git
+cd DeepContext
 python -m venv .venv
 
 # Windows
@@ -98,10 +111,15 @@ python examples/chat_demo.py
 ```
 
 An interactive chatbot that remembers conversations across turns. Special commands:
-- `memories` -- Search stored memories
-- `graph <entity>` -- Show knowledge graph for an entity
-- `lifecycle` -- Run decay/consolidation/cleanup
-- `exit` -- Quit
+
+| Command | Description |
+|---------|-------------|
+| `memories` | Search stored memories |
+| `graph <entity>` | Show knowledge graph for an entity |
+| `lifecycle` | Run decay / consolidation / cleanup |
+| `exit` | Quit |
+
+---
 
 ## Architecture
 
@@ -134,24 +152,23 @@ deepcontext/
       graph.py              Entity, Relationship, ConversationSummary tables
   api/
     server.py               FastAPI REST API
-examples/
-  chat_demo.py              Interactive CLI chatbot
-tests/
-  conftest.py               Shared fixtures (in-memory SQLite, mocks)
-  test_core.py              Enums, Pydantic models, settings (23 tests)
-  test_database.py          ORM CRUD operations (12 tests)
-  test_vectorstore.py       Cosine similarity, vector search (16 tests)
-  test_graph.py             Entity upsert, relationships, traversal (12 tests)
-  test_extraction.py        JSON parsing, LLM extraction mocks (16 tests)
-  test_retrieval_lifecycle.py  RRF fusion, decay, consolidation (12 tests)
-  test_api.py               REST endpoint tests via httpx (10 tests)
 ```
+
+---
 
 ## How It Works
 
 ### Memory Pipeline
 
 When you call `ctx.add(messages, user_id)`:
+
+```
+Conversation ──> LLM Extraction ──> Classification ──> Embedding ──> Storage
+                      |                   |                             |
+                      v                   v                             v
+                 Facts, Entities    ADD / UPDATE /              Knowledge Graph
+                 Relationships      REPLACE / NOOP                  Update
+```
 
 1. **Extraction** -- The LLM analyzes the conversation and extracts semantic facts, episodic events, entities, and relationships
 2. **Classification** -- Each extracted fact is compared against existing memories. The LLM decides whether to ADD, UPDATE, REPLACE, or skip (NOOP)
@@ -164,6 +181,14 @@ When you call `ctx.add(messages, user_id)`:
 
 When you call `ctx.search(query, user_id)`:
 
+```
+Query ──> Embed ──> Vector Search (0.6) ──┐
+  |                                        ├──> RRF Fusion ──> Scoring ──> Results
+  ├─────> Keyword Search (0.25) ──────────┤
+  |                                        |
+  └─────> Graph Expansion (0.15) ─────────┘
+```
+
 1. **Vector search** -- Query is embedded and compared via cosine similarity (pgvector or Python fallback)
 2. **Keyword search** -- PostgreSQL `tsvector` full-text search (ILIKE fallback on SQLite)
 3. **Graph expansion** -- Entities mentioned in the query are found, their graph neighbors are traversed, and memories referencing those entities are boosted
@@ -175,9 +200,19 @@ When you call `ctx.search(query, user_id)`:
 
 When you call `ctx.run_lifecycle(user_id)`:
 
+```
+Short-term Memories ──> Decay (Ebbinghaus) ──> Consolidation (LLM merge) ──> Long-term
+                              |                        |
+                              v                        v
+                        Deactivate               Group by entity
+                       (importance < 0.05)     overlap (Union-Find)
+```
+
 1. **Decay** -- Ebbinghaus forgetting curve: `R = e^(-0.693 * days / effective_half_life)`. Frequently accessed memories decay slower. Memories below 0.05 importance are deactivated
 2. **Consolidation** -- When short-term memory count >= threshold (default 20), memories are grouped by entity overlap (Union-Find), each group is merged by the LLM into a long-term fact, and source memories are deactivated
 3. **Cleanup** -- Remaining low-importance non-long-term memories are soft-deleted
+
+---
 
 ## REST API
 
@@ -226,6 +261,8 @@ curl -X POST http://localhost:8000/memory/search \
   }'
 ```
 
+---
+
 ## Configuration Reference
 
 All settings use the `DEEPCONTEXT_` env prefix. Set them in `.env` or pass directly to `DeepContext()`.
@@ -245,6 +282,8 @@ All settings use the `DEEPCONTEXT_` env prefix. Set them in `.env` or pass direc
 | `max_connections_per_memory` | `5` | Max connections per memory node |
 | `debug` | `false` | Enable debug logging |
 | `auto_consolidate` | `true` | Auto-consolidate on add |
+
+---
 
 ## Development
 
@@ -281,7 +320,6 @@ DeepContext works with SQLite for development, but PostgreSQL with pgvector is r
 
 3. **Create the database and enable pgvector**:
    ```powershell
-   # Using psql (from PostgreSQL bin directory)
    psql -U postgres -c "CREATE DATABASE deepcontext;"
    psql -U postgres -d deepcontext -c "CREATE EXTENSION IF NOT EXISTS vector;"
    ```
@@ -337,18 +375,32 @@ alembic downgrade -1
 alembic upgrade head --sql
 ```
 
-Note: Alembic migrations target PostgreSQL. SQLite mode uses `Base.metadata.create_all()` at runtime and does not need Alembic.
+> **Note:** Alembic migrations target PostgreSQL. SQLite mode uses `Base.metadata.create_all()` at runtime and does not need Alembic.
+
+---
 
 ## Tech Stack
 
-- **Python 3.11+** with full type annotations
-- **SQLAlchemy 2.0** (async) -- ORM and database management
-- **pgvector** -- Vector similarity search in PostgreSQL
-- **OpenAI API** -- Embeddings and LLM extraction
-- **FastAPI** -- REST API layer
-- **Pydantic v2** -- Data validation and settings management
-- **NumPy** -- Vector operations
+| Component | Technology |
+|-----------|------------|
+| Language | Python 3.11+ with full type annotations |
+| ORM | SQLAlchemy 2.0 (async) |
+| Vector Store | pgvector (PostgreSQL) |
+| LLM | OpenAI API / OpenRouter |
+| API | FastAPI + Uvicorn |
+| Validation | Pydantic v2 + pydantic-settings |
+| Math | NumPy |
+| Migrations | Alembic |
+| Testing | pytest + pytest-asyncio + httpx |
+
+---
 
 ## License
 
-MIT
+MIT -- see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Built by <a href="https://github.com/umairinayat">@umairinayat</a>
+</p>
