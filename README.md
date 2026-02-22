@@ -4,12 +4,17 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/deepcontext/"><img src="https://img.shields.io/pypi/v/deepcontext.svg" alt="PyPI"></a>
   <a href="https://github.com/umairinayat/DeepContext/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
-  <a href="https://github.com/umairinayat/DeepContext"><img src="https://img.shields.io/badge/tests-110%20passed-brightgreen.svg" alt="Tests: 110 passed"></a>
+  <a href="https://github.com/umairinayat/DeepContext"><img src="https://img.shields.io/badge/tests-179%20passed-brightgreen.svg" alt="Tests: 179 passed"></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/API-FastAPI-009688.svg" alt="FastAPI"></a>
   <a href="https://github.com/pgvector/pgvector"><img src="https://img.shields.io/badge/vector%20store-pgvector-orange.svg" alt="pgvector"></a>
   <a href="https://pydantic-docs.helpmanual.io/"><img src="https://img.shields.io/badge/models-Pydantic%20v2-e92063.svg" alt="Pydantic v2"></a>
+</p>
+
+<p align="center">
+  <a href="https://umairinayat.github.io/DeepContext/">Website</a> · <a href="https://umairinayat.github.io/DeepContext/#/docs">Docs</a> · <a href="https://pypi.org/project/deepcontext/">PyPI</a> · <a href="https://umairinayat.github.io/DeepContext/#/demo">Demo</a>
 </p>
 
 ---
@@ -35,16 +40,35 @@ DeepContext gives AI agents persistent, structured memory. Conversations are aut
 
 ### Installation
 
+**From PyPI (recommended):**
+
+```bash
+pip install deepcontext
+```
+
+With PostgreSQL support:
+
+```bash
+pip install deepcontext[postgres]
+```
+
+With FastAPI server:
+
+```bash
+pip install deepcontext[api]
+```
+
+Everything:
+
+```bash
+pip install deepcontext[all]
+```
+
+**From source:**
+
 ```bash
 git clone https://github.com/umairinayat/DeepContext.git
 cd DeepContext
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
-source .venv/bin/activate
-
 pip install -e ".[all]"
 ```
 
@@ -294,7 +318,7 @@ pip install -e ".[dev]"
 pytest tests/ -v
 ```
 
-110 tests covering all subsystems. Tests use in-memory SQLite and mock LLM clients -- no API keys or database needed.
+179 tests covering all subsystems. Tests use in-memory SQLite and mock LLM clients -- no API keys or database needed.
 
 ### PostgreSQL + pgvector Setup (Production)
 

@@ -58,15 +58,22 @@ export default function Docs() {
 
                     {/* Installation */}
                     <h2 id="installation">Installation</h2>
+                    <h3>From PyPI (recommended)</h3>
+                    <CodeBlock language="bash" header="terminal" code={`pip install deepcontext`} />
+
+                    <p>With optional extras:</p>
+                    <CodeBlock language="bash" header="terminal" code={`# PostgreSQL + pgvector support
+pip install deepcontext[postgres]
+
+# FastAPI server
+pip install deepcontext[api]
+
+# Everything
+pip install deepcontext[all]`} />
+
+                    <h3>From Source</h3>
                     <CodeBlock language="bash" header="terminal" code={`git clone https://github.com/umairinayat/DeepContext.git
 cd DeepContext
-python -m venv .venv
-
-# Windows
-.venv\\Scripts\\activate
-# Linux/macOS
-source .venv/bin/activate
-
 pip install -e ".[all]"`} />
 
                     <h3>Environment Variables</h3>
