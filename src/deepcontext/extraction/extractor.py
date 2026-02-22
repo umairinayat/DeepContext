@@ -14,6 +14,7 @@ from typing import Any
 from deepcontext.core.clients import LLMClients
 from deepcontext.core.settings import DeepContextSettings
 from deepcontext.core.types import (
+    EntityType,
     ExtractionResult,
     ExtractedEntity,
     ExtractedFact,
@@ -256,10 +257,16 @@ class Extractor:
         entities = []
         for item in parsed.get("entities", []):
             if isinstance(item, dict):
+                # Validate entity_type against enum; fall back to "other"
+                raw_type = item.get("entity_type", "other")
+                try:
+                    entity_type = EntityType(raw_type)
+                except ValueError:
+                    entity_type = EntityType.OTHER
                 entities.append(
                     ExtractedEntity(
                         name=item.get("name", ""),
-                        entity_type=item.get("entity_type", "other"),
+                        entity_type=entity_type,
                         attributes=item.get("attributes", {}),
                     )
                 )

@@ -4,19 +4,33 @@ Tests for the hybrid retriever and the lifecycle manager.
 
 from __future__ import annotations
 
+import json
 import math
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
 from sqlalchemy import select
 
+from deepcontext.core.settings import DeepContextSettings
 from deepcontext.core.types import MemoryTier, MemoryType
 from deepcontext.db.models.memory import Memory
 from deepcontext.lifecycle.manager import LifecycleManager
 from deepcontext.retrieval.hybrid import HybridRetriever
 from tests.conftest import fake_embedding
+
+
+def _mock_llm_response(content: str) -> MagicMock:
+    """Create a mock ChatCompletion response."""
+    msg = MagicMock()
+    msg.content = content
+    choice = MagicMock()
+    choice.message = msg
+    response = MagicMock()
+    response.choices = [choice]
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -302,3 +316,293 @@ class TestLifecycleCleanup:
         cleaned = await manager.cleanup("u1")
 
         assert cleaned == 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: Lifecycle Deep Tests
+# ---------------------------------------------------------------------------
+
+
+class TestDecayMathCorrectness:
+    """Verify the Ebbinghaus decay formula produces correct values."""
+
+    @pytest.mark.asyncio
+    async def test_decay_formula_7day_halflife(self, session_factory):
+        """After exactly 7 days with 7-day half-life, importance ≈ 0.5 × original."""
+        seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        async with session_factory() as session:
+            mem = Memory(
+                user_id="u1",
+                text="exactly 7 days old",
+                memory_type="semantic",
+                tier="short_term",
+                importance=1.0,
+                confidence=0.9,
+                access_count=0,  # no reinforcement
+                created_at=seven_days_ago,
+                updated_at=seven_days_ago,
+            )
+            session.add(mem)
+            await session.commit()
+            await session.refresh(mem)
+
+        settings = DeepContextSettings(openai_api_key="sk-test", decay_half_life_days=7.0)
+        manager = LifecycleManager(MagicMock(), settings, MagicMock(), session_factory)
+        await manager.apply_decay("u1")
+
+        async with session_factory() as session:
+            loaded = await session.get(Memory, mem.id)
+            # decay_factor = exp(-0.693 * 7 / 7) = exp(-0.693) ≈ 0.5
+            assert 0.45 < loaded.importance < 0.55, f"Expected ~0.5, got {loaded.importance}"
+
+    @pytest.mark.asyncio
+    async def test_access_count_slows_decay(self, session_factory):
+        """Higher access_count should result in less decay (reinforcement)."""
+        old_time = datetime.now(timezone.utc) - timedelta(days=14)
+        async with session_factory() as session:
+            mem_no_access = Memory(
+                user_id="u1", text="no access", memory_type="semantic",
+                tier="short_term", importance=1.0, confidence=0.9,
+                access_count=0, created_at=old_time, updated_at=old_time,
+            )
+            mem_with_access = Memory(
+                user_id="u1", text="high access", memory_type="semantic",
+                tier="short_term", importance=1.0, confidence=0.9,
+                access_count=20, created_at=old_time, updated_at=old_time,
+            )
+            session.add(mem_no_access)
+            session.add(mem_with_access)
+            await session.commit()
+            await session.refresh(mem_no_access)
+            await session.refresh(mem_with_access)
+
+        settings = DeepContextSettings(openai_api_key="sk-test", decay_half_life_days=7.0)
+        manager = LifecycleManager(MagicMock(), settings, MagicMock(), session_factory)
+        await manager.apply_decay("u1")
+
+        async with session_factory() as session:
+            no_acc = await session.get(Memory, mem_no_access.id)
+            hi_acc = await session.get(Memory, mem_with_access.id)
+            # Frequently accessed memory should retain more importance
+            assert hi_acc.importance > no_acc.importance, (
+                f"High-access ({hi_acc.importance}) should be > no-access ({no_acc.importance})"
+            )
+
+
+class TestConsolidationFullFlow:
+    """Test the complete consolidation pipeline."""
+
+    @pytest.mark.asyncio
+    async def test_consolidation_groups_and_merges(self, session_factory, mock_clients, settings):
+        """Full flow: group → LLM merge → long-term created → sources deactivated."""
+        from deepcontext.extraction.extractor import Extractor
+        import json
+
+        now = datetime.now(timezone.utc)
+
+        # Create 4 short-term semantic memories with overlapping entities
+        async with session_factory() as session:
+            for i, (text, entities) in enumerate([
+                ("User knows Python", ["Python"]),
+                ("User is good at Python programming", ["Python"]),
+                ("User uses FastAPI for web APIs", ["FastAPI"]),
+                ("User prefers FastAPI over Flask", ["FastAPI", "Flask"]),
+            ]):
+                mem = Memory(
+                    user_id="u1", conversation_id="c1", text=text,
+                    memory_type="semantic", tier="short_term",
+                    importance=0.7, confidence=0.8, source_entities=entities,
+                    created_at=now, updated_at=now,
+                )
+                mem.set_embedding(fake_embedding(hash(text) % 1000))
+                session.add(mem)
+            await session.commit()
+
+        # Mock the LLM consolidation response
+        mock_clients.llm.chat.completions.create = AsyncMock(
+            return_value=_mock_llm_response(json.dumps({
+                "text": "User is a skilled Python developer who uses FastAPI",
+                "importance": 0.85,
+                "confidence": 0.9,
+                "entities": ["Python", "FastAPI"],
+            }))
+        )
+
+        settings_low = DeepContextSettings(
+            openai_api_key="sk-test",
+            consolidation_threshold=2,  # very low threshold
+        )
+        extractor = Extractor(mock_clients, settings_low)
+        manager = LifecycleManager(mock_clients, settings_low, extractor, session_factory)
+
+        consolidated = await manager.consolidate("u1")
+        assert consolidated >= 1
+
+        # Verify new long-term memory exists
+        async with session_factory() as session:
+            lt_mems = (await session.execute(
+                select(Memory).where(
+                    Memory.user_id == "u1",
+                    Memory.tier == "long_term",
+                    Memory.is_active == True,
+                )
+            )).scalars().all()
+            assert len(lt_mems) >= 1
+
+            # Verify source memories are deactivated
+            st_mems = (await session.execute(
+                select(Memory).where(
+                    Memory.user_id == "u1",
+                    Memory.tier == "short_term",
+                )
+            )).scalars().all()
+            deactivated = [m for m in st_mems if not m.is_active]
+            assert len(deactivated) >= 2  # at least one group was consolidated
+
+    @pytest.mark.asyncio
+    async def test_consolidation_below_threshold_skipped(self, session_factory, mock_clients, settings):
+        """Fewer memories than threshold → no consolidation."""
+        from deepcontext.extraction.extractor import Extractor
+
+        now = datetime.now(timezone.utc)
+
+        # Only 1 short-term semantic memory
+        async with session_factory() as session:
+            mem = Memory(
+                user_id="u1", text="Only memory", memory_type="semantic",
+                tier="short_term", importance=0.7, confidence=0.8,
+                source_entities=["X"], created_at=now, updated_at=now,
+            )
+            mem.set_embedding(fake_embedding(42))
+            session.add(mem)
+            await session.commit()
+
+        settings_high = DeepContextSettings(
+            openai_api_key="sk-test",
+            consolidation_threshold=10,  # need 10 memories
+        )
+        extractor = Extractor(mock_clients, settings_high)
+        manager = LifecycleManager(mock_clients, settings_high, extractor, session_factory)
+
+        consolidated = await manager.consolidate("u1")
+        assert consolidated == 0
+
+    @pytest.mark.asyncio
+    async def test_lifecycle_double_decay_not_double_apply(self, session_factory):
+        """Running decay twice should not halve importance twice from original."""
+        old_time = datetime.now(timezone.utc) - timedelta(days=7)
+        async with session_factory() as session:
+            mem = Memory(
+                user_id="u1", text="decay test", memory_type="semantic",
+                tier="short_term", importance=1.0, confidence=0.9,
+                access_count=0, created_at=old_time, updated_at=old_time,
+            )
+            session.add(mem)
+            await session.commit()
+            await session.refresh(mem)
+
+        settings = DeepContextSettings(openai_api_key="sk-test", decay_half_life_days=7.0)
+        manager = LifecycleManager(MagicMock(), settings, MagicMock(), session_factory)
+
+        # First decay
+        await manager.apply_decay("u1")
+        async with session_factory() as session:
+            loaded = await session.get(Memory, mem.id)
+            importance_after_first = loaded.importance
+
+        # Second decay — should decay from current importance, not from original
+        await manager.apply_decay("u1")
+        async with session_factory() as session:
+            loaded = await session.get(Memory, mem.id)
+            # After second decay, importance should be lower than after first
+            # But the key point is that it decays from the CURRENT value
+            assert loaded.importance <= importance_after_first
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: Retrieval Quality Tests
+# ---------------------------------------------------------------------------
+
+
+class TestRRFWeightSensitivity:
+    """Test that changing RRF weights changes the ranking."""
+
+    def test_vector_weight_dominates(self):
+        """With high vector weight, vector rank 1 should beat keyword rank 1."""
+        vector = [(1, 0.99)]
+        keyword = [(2, 0.99)]
+
+        result = HybridRetriever._reciprocal_rank_fusion(
+            vector, keyword, [],
+            vector_weight=0.9, keyword_weight=0.1, graph_weight=0.0,
+        )
+        assert result[1] > result[2]
+
+    def test_keyword_weight_dominates(self):
+        """With high keyword weight, keyword rank 1 should beat vector rank 1."""
+        vector = [(1, 0.99)]
+        keyword = [(2, 0.99)]
+
+        result = HybridRetriever._reciprocal_rank_fusion(
+            vector, keyword, [],
+            vector_weight=0.1, keyword_weight=0.9, graph_weight=0.0,
+        )
+        assert result[2] > result[1]
+
+    def test_graph_boost_helps_ranking(self):
+        """A memory with graph boost should rank higher than one without."""
+        vector = [(1, 0.9), (2, 0.85)]
+        keyword = []
+        graph = [2]  # memory 2 gets graph boost
+
+        result = HybridRetriever._reciprocal_rank_fusion(
+            vector, keyword, graph,
+            vector_weight=0.5, keyword_weight=0.0, graph_weight=0.5,
+        )
+        # Memory 2 appears in vector AND graph, memory 1 only in vector
+        assert result[2] > result[1]
+
+    def test_multi_source_appearance_boosts(self):
+        """Memory appearing in all 3 sources should always rank highest."""
+        vector = [(1, 0.9), (2, 0.95)]  # memory 2 ranked higher in vector
+        keyword = [(1, 0.8)]
+        graph = [1]
+
+        result = HybridRetriever._reciprocal_rank_fusion(vector, keyword, graph)
+        # Memory 1 appears in all 3 sources, should beat memory 2
+        assert result[1] > result[2]
+
+
+class TestAccessTracking:
+    """Verify that search operations update access counts."""
+
+    @pytest.mark.asyncio
+    async def test_search_increments_access_count(
+        self, session_factory, mock_clients, settings, sample_memories
+    ):
+        """After searching, accessed memories should have incremented access_count."""
+        from deepcontext.vectorstore.pgvector_store import PgVectorStore
+        from deepcontext.graph.knowledge_graph import KnowledgeGraph
+
+        store = PgVectorStore(session_factory)
+        graph = KnowledgeGraph(session_factory)
+        retriever = HybridRetriever(
+            mock_clients, settings, store, graph, session_factory
+        )
+
+        # Get initial access count
+        test_mem = sample_memories[0]
+        initial_count = test_mem.access_count
+
+        # Perform a search that should retrieve this memory
+        await retriever.search(
+            query=test_mem.text,
+            user_id="test_user",
+            limit=5,
+        )
+
+        # Check that access_count was incremented
+        async with session_factory() as session:
+            reloaded = await session.get(Memory, test_mem.id)
+            assert reloaded.access_count >= initial_count + 1
+

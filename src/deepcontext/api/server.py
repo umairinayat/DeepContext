@@ -11,10 +11,14 @@ Environment variables:
 
 from __future__ import annotations
 
+import pathlib
 from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from deepcontext.memory.engine import MemoryEngine
@@ -96,6 +100,28 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# CORS (allow local dev)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Static dashboard
+_static_dir = pathlib.Path(__file__).parent / "static"
+if _static_dir.is_dir():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def dashboard():
+    """Serve the testing dashboard."""
+    index = _static_dir / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"message": "Dashboard not found. Place index.html in api/static/"}
 
 
 @app.get("/health")

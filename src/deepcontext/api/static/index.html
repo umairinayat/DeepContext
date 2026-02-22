@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepContext — Testing Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2234;
+            --bg-card-hover: #1e2a42;
+            --bg-input: #0f172a;
+            --border: #2d3a52;
+            --border-active: #3b82f6;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --success: #22c55e;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --purple: #8b5cf6;
+            --purple-bg: rgba(139, 92, 246, 0.1);
+            --teal: #14b8a6;
+            --teal-bg: rgba(20, 184, 166, 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --transition: 200ms ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0f1729 0%, #1a2744 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.connected {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-badge.disconnected {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .connected .status-dot {
+            background: var(--success);
+        }
+
+        .disconnected .status-dot {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Layout */
+        .main {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .sidebar-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 0.75rem 0.75rem 0.3rem;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* User selector in sidebar */
+        .user-section {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-input-group {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem 0.5rem;
+        }
+
+        .user-input-group input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        .user-input-group input:focus {
+            border-color: var(--accent);
+        }
+
+        /* Content */
+        .content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .panel-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.35rem;
+        }
+
+        textarea,
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            resize: vertical;
+        }
+
+        textarea:focus,
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea {
+            min-height: 80px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Tags */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .tag-semantic {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .tag-episodic {
+            background: var(--purple-bg);
+            color: var(--purple);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .tag-procedural {
+            background: var(--teal-bg);
+            color: var(--teal);
+            border: 1px solid rgba(20, 184, 166, 0.2);
+        }
+
+        .tag-short_term {
+            background: var(--warning-bg);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .tag-long_term {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .tag-working {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Results */
+        .result-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: all var(--transition);
+        }
+
+        .result-item:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .result-text {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .result-score {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Graph visual */
+        .graph-node {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .graph-arrow {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .graph-relation {
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Response panel */
+        .response-panel {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .response-panel pre {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 0.15rem;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+        }
+
+        .loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        .toast.success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .toast.error {
+            background: #dc2626;
+            color: white;
+        }
+
+        .toast.info {
+            background: var(--accent);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Conversation builder */
+        .msg-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .msg-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: start;
+        }
+
+        .msg-row select {
+            width: 110px;
+            flex-shrink: 0;
+        }
+
+        .msg-row textarea {
+            min-height: 40px;
+            flex: 1;
+        }
+
+        .msg-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.3rem;
+            transition: color var(--transition);
+        }
+
+        .msg-remove:hover {
+            color: var(--danger);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: none;
+            }
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 900px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .emoji {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div>
+                <div class="logo">DeepContext</div>
+                <div class="logo-sub">Testing Dashboard</div>
+            </div>
+        </div>
+        <div id="statusBadge" class="status-badge disconnected">
+            <span class="status-dot"></span>
+            <span id="statusText">Checking...</span>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-label">Memory Operations</div>
+            <div class="nav-item active" data-panel="add" onclick="switchPanel('add')">
+                <span class="nav-icon">💬</span> Add Memory
+            </div>
+            <div class="nav-item" data-panel="search" onclick="switchPanel('search')">
+                <span class="nav-icon">🔍</span> Search
+            </div>
+            <div class="nav-item" data-panel="update" onclick="switchPanel('update')">
+                <span class="nav-icon">✏️</span> Update
+            </div>
+            <div class="nav-item" data-panel="delete" onclick="switchPanel('delete')">
+                <span class="nav-icon">🗑️</span> Delete
+            </div>
+
+            <div class="sidebar-label">Knowledge Graph</div>
+            <div class="nav-item" data-panel="graph" onclick="switchPanel('graph')">
+                <span class="nav-icon">🕸️</span> Explore Graph
+            </div>
+
+            <div class="sidebar-label">System</div>
+            <div class="nav-item" data-panel="lifecycle" onclick="switchPanel('lifecycle')">
+                <span class="nav-icon">♻️</span> Run Lifecycle
+            </div>
+            <div class="nav-item" data-panel="test" onclick="switchPanel('test')">
+                <span class="nav-icon">🧪</span> Quick Tests
+            </div>
+
+            <!-- User selector -->
+            <div class="user-section">
+                <div class="sidebar-label">Active User</div>
+                <div class="user-input-group">
+                    <input type="text" id="userId" value="test_user" placeholder="user_id">
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <div class="content">
+
+            <!-- ============ ADD MEMORY ============ -->
+            <div id="panel-add" class="panel active">
+                <div class="panel-title">Add Memory</div>
+                <div class="panel-subtitle">Extract and store memories from a conversation turn</div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Conversation Messages</span>
+                        <button class="btn btn-secondary" onclick="addMessage()">+ Add Message</button>
+                    </div>
+                    <div id="msgList" class="msg-list">
+                        <div class="msg-row">
+                            <select>
+                                <option value="user">user</option>
+                                <option value="assistant">assistant</option>
+                            </select>
+                            <textarea
+                                placeholder="Enter message content...">I'm a Python developer working at Acme Corp. I love FastAPI and pytest.</textarea>
+                            <button class="msg-remove" onclick="removeMessage(this)">✕</button>
+                        </div>
+                        <div class="msg-row">
+                            <select>
+                                <option value="user">user</option>
+                                <option value="assistant" selected>assistant</option>
+                            </select>
+                            <textarea
+                                placeholder="Enter message content...">Great to hear! Python is a fantastic choice.</textarea>
+                            <button class="msg-remove" onclick="removeMessage(this)">✕</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Conversation ID</label>
+                        <input type="text" id="addConvId" value="conv_1" placeholder="conversation_id">
+                    </div>
+                    <button class="btn btn-primary" id="addBtn" onclick="doAdd()">
+                        <span class="btn-text">🧠 Extract & Store</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="addResponse" class="response-panel" style="display:none">
+                    <pre id="addResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ SEARCH ============ -->
+            <div id="panel-search" class="panel">
+                <div class="panel-title">Search Memories</div>
+                <div class="panel-subtitle">Hybrid retrieval: vector + keyword + graph</div>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Query</label>
+                        <input type="text" id="searchQuery" placeholder="What does the user work with?"
+                            value="programming languages">
+                    </div>
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Limit</label>
+                            <input type="number" id="searchLimit" value="10" min="1" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tier Filter</label>
+                            <select id="searchTier">
+                                <option value="">All Tiers</option>
+                                <option value="short_term">Short Term</option>
+                                <option value="long_term">Long Term</option>
+                                <option value="working">Working</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Memory Type</label>
+                            <select id="searchType">
+                                <option value="">All Types</option>
+                                <option value="semantic">Semantic</option>
+                                <option value="episodic">Episodic</option>
+                                <option value="procedural">Procedural</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Graph Expansion</label>
+                            <select id="searchGraph">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">
+                        <span class="btn-text">🔍 Search</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="searchResults"></div>
+
+                <div id="searchResponse" class="response-panel" style="display:none">
+                    <pre id="searchResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ UPDATE ============ -->
+            <div id="panel-update" class="panel">
+                <div class="panel-title">Update Memory</div>
+                <div class="panel-subtitle">Modify text and re-generate embedding</div>
+
+                <div class="card">
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Memory ID</label>
+                            <input type="number" id="updateId" placeholder="e.g. 1" min="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Text</label>
+                        <textarea id="updateText" placeholder="Updated memory text..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" id="updateBtn" onclick="doUpdate()">
+                        <span class="btn-text">✏️ Update</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="updateResponse" class="response-panel" style="display:none">
+                    <pre id="updateResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ DELETE ============ -->
+            <div id="panel-delete" class="panel">
+                <div class="panel-title">Delete Memory</div>
+                <div class="panel-subtitle">Soft-delete a memory (sets is_active=false)</div>
+
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Memory ID</label>
+                        <input type="number" id="deleteId" placeholder="e.g. 1" min="1">
+                    </div>
+                    <button class="btn btn-danger" id="deleteBtn" onclick="doDelete()">
+                        <span class="btn-text">🗑️ Delete</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="deleteResponse" class="response-panel" style="display:none">
+                    <pre id="deleteResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ GRAPH ============ -->
+            <div id="panel-graph" class="panel">
+                <div class="panel-title">Knowledge Graph</div>
+                <div class="panel-subtitle">Explore entity relationships via BFS traversal</div>
+
+                <div class="card">
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label class="form-label">Entity Name</label>
+                            <input type="text" id="graphEntity" placeholder="e.g. Python" value="User">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Depth</label>
+                            <input type="number" id="graphDepth" value="2" min="1" max="5">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="graphBtn" onclick="doGraph()">
+                        <span class="btn-text">🕸️ Explore</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="graphResults"></div>
+
+                <div id="graphResponse" class="response-panel" style="display:none">
+                    <pre id="graphResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ LIFECYCLE ============ -->
+            <div id="panel-lifecycle" class="panel">
+                <div class="panel-title">Memory Lifecycle</div>
+                <div class="panel-subtitle">Run decay → consolidation → cleanup</div>
+
+                <div class="card">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+                        Applies Ebbinghaus forgetting curve decay, consolidates short-term memories
+                        into long-term facts via LLM merge, and cleans up low-importance memories.
+                    </p>
+                    <button class="btn btn-primary" id="lifecycleBtn" onclick="doLifecycle()">
+                        <span class="btn-text">♻️ Run Lifecycle</span>
+                        <span class="spinner"></span>
+                    </button>
+                </div>
+
+                <div id="lifecycleStats" style="display:none">
+                    <div class="stats-grid" id="lifecycleGrid"></div>
+                </div>
+
+                <div id="lifecycleResponse" class="response-panel" style="display:none">
+                    <pre id="lifecycleResponseBody"></pre>
+                </div>
+            </div>
+
+            <!-- ============ QUICK TESTS ============ -->
+            <div id="panel-test" class="panel">
+                <div class="panel-title">Quick Tests</div>
+                <div class="panel-subtitle">Run automated test scenarios against the running server</div>
+
+                <div class="card">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+                        These tests exercise the full pipeline: add → search → graph → lifecycle.
+                        Each test uses its own user_id to avoid conflicts.
+                    </p>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="runTest('full_pipeline')">
+                            🔄 Full Pipeline Test
+                        </button>
+                        <button class="btn btn-secondary" onclick="runTest('multi_user')">
+                            👥 Multi-User Isolation
+                        </button>
+                        <button class="btn btn-secondary" onclick="runTest('search_quality')">
+                            📊 Search Quality
+                        </button>
+                        <button class="btn btn-secondary" onclick="runTest('lifecycle')">
+                            ♻️ Lifecycle Test
+                        </button>
+                    </div>
+                </div>
+
+                <div id="testResults" class="response-panel" style="display:none;">
+                    <pre id="testResultsBody"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toasts"></div>
+
+    <script>
+        const API = '';  // same origin
+
+        // ---- Navigation ----
+        function switchPanel(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            document.querySelector(`[data-panel="${name}"]`).classList.add('active');
+        }
+
+        function getUserId() {
+            return document.getElementById('userId').value || 'test_user';
+        }
+
+        // ---- Toast ----
+        function toast(msg, type = 'info') {
+            const el = document.createElement('div');
+            el.className = 'toast ' + type;
+            el.textContent = msg;
+            document.getElementById('toasts').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        // ---- Loading ----
+        function setLoading(btnId, loading) {
+            const btn = document.getElementById(btnId);
+            if (loading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // ---- API helper ----
+        async function apiCall(method, path, body) {
+            const opts = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+            };
+            if (body) opts.body = JSON.stringify(body);
+
+            const response = await fetch(API + path, opts);
+            const data = await response.json();
+
+            if (!response.ok) {
+                // FastAPI returns detail as array for 422, string for others
+                let msg;
+                if (Array.isArray(data.detail)) {
+                    msg = data.detail.map(e => `${e.loc.join('.')}: ${e.msg}`).join('; ');
+                } else {
+                    msg = data.detail || `HTTP ${response.status}`;
+                }
+                throw new Error(msg);
+            }
+            return data;
+        }
+
+        // ---- Health check ----
+        async function checkHealth() {
+            try {
+                const data = await apiCall('GET', '/health');
+                const badge = document.getElementById('statusBadge');
+                const text = document.getElementById('statusText');
+                badge.className = 'status-badge connected';
+                text.textContent = `v${data.version}`;
+            } catch (e) {
+                const badge = document.getElementById('statusBadge');
+                const text = document.getElementById('statusText');
+                badge.className = 'status-badge disconnected';
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // ---- Messages management ----
+        function addMessage() {
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+            row.innerHTML = `
+                <select><option value="user">user</option><option value="assistant">assistant</option></select>
+                <textarea placeholder="Enter message content..."></textarea>
+                <button class="msg-remove" onclick="removeMessage(this)">✕</button>
+            `;
+            document.getElementById('msgList').appendChild(row);
+        }
+
+        function removeMessage(btn) {
+            const rows = document.querySelectorAll('.msg-row');
+            if (rows.length > 1) btn.closest('.msg-row').remove();
+        }
+
+        function getMessages() {
+            const rows = document.querySelectorAll('.msg-row');
+            return Array.from(rows).map(row => ({
+                role: row.querySelector('select').value,
+                content: row.querySelector('textarea').value,
+            })).filter(m => m.content.trim());
+        }
+
+        // ---- ADD ----
+        async function doAdd() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            setLoading('addBtn', true);
+            try {
+                const messages = getMessages();
+                if (!messages.length) { toast('Add at least one message', 'error'); return; }
+
+                const data = await apiCall('POST', '/memory/add', {
+                    messages,
+                    user_id: getUserId(),
+                    conversation_id: document.getElementById('addConvId').value || 'default',
+                });
+
+                document.getElementById('addResponse').style.display = 'block';
+                document.getElementById('addResponseBody').textContent = JSON.stringify(data, null, 2);
+
+                const added = data.memories_added || 0;
+                const entities = (data.entities_found || []).length;
+                toast(`✅ Added ${added} memories, found ${entities} entities`, 'success');
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('addBtn', false);
+            }
+        }
+
+        // ---- SEARCH ----
+        async function doSearch() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            if (!document.getElementById('searchQuery').value.trim()) { toast('Query is required', 'error'); return; }
+            setLoading('searchBtn', true);
+            try {
+                const body = {
+                    query: document.getElementById('searchQuery').value,
+                    user_id: getUserId(),
+                    limit: parseInt(document.getElementById('searchLimit').value) || 10,
+                    include_graph: document.getElementById('searchGraph').value === 'true',
+                };
+                const tier = document.getElementById('searchTier').value;
+                const type = document.getElementById('searchType').value;
+                if (tier) body.tier = tier;
+                if (type) body.memory_type = type;
+
+                const data = await apiCall('POST', '/memory/search', body);
+
+                // Render results
+                const container = document.getElementById('searchResults');
+                if (data.results && data.results.length > 0) {
+                    container.innerHTML = data.results.map(r => `
+                        <div class="result-item">
+                            <div class="result-text">${escHtml(r.text)}</div>
+                            <div class="result-meta">
+                                <span class="result-score">Score: ${r.score.toFixed(4)}</span>
+                                <span class="tag tag-${r.memory_type}">${r.memory_type}</span>
+                                <span class="tag tag-${r.tier}">${r.tier}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem;">ID: ${r.memory_id}</span>
+                                <span style="color: var(--text-muted); font-size: 0.75rem;">Imp: ${r.importance}</span>
+                                ${r.entities.length ? `<span style="color: var(--text-muted); font-size: 0.75rem;">Entities: ${r.entities.join(', ')}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="emoji">🔍</div>No results found</div>';
+                }
+
+                document.getElementById('searchResponse').style.display = 'block';
+                document.getElementById('searchResponseBody').textContent = JSON.stringify(data, null, 2);
+
+                toast(`Found ${data.total} results`, 'info');
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('searchBtn', false);
+            }
+        }
+
+        // ---- UPDATE ----
+        async function doUpdate() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            if (!document.getElementById('updateId').value) { toast('Memory ID is required', 'error'); return; }
+            if (!document.getElementById('updateText').value.trim()) { toast('New text is required', 'error'); return; }
+            setLoading('updateBtn', true);
+            try {
+                const data = await apiCall('PUT', '/memory/update', {
+                    memory_id: parseInt(document.getElementById('updateId').value),
+                    text: document.getElementById('updateText').value,
+                    user_id: getUserId(),
+                });
+
+                document.getElementById('updateResponse').style.display = 'block';
+                document.getElementById('updateResponseBody').textContent = JSON.stringify(data, null, 2);
+                toast('✅ Memory updated', 'success');
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('updateBtn', false);
+            }
+        }
+
+        // ---- DELETE ----
+        async function doDelete() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            if (!document.getElementById('deleteId').value) { toast('Memory ID is required', 'error'); return; }
+            setLoading('deleteBtn', true);
+            try {
+                const data = await apiCall('DELETE', '/memory/delete', {
+                    memory_id: parseInt(document.getElementById('deleteId').value),
+                    user_id: getUserId(),
+                });
+
+                document.getElementById('deleteResponse').style.display = 'block';
+                document.getElementById('deleteResponseBody').textContent = JSON.stringify(data, null, 2);
+                toast('✅ Memory deleted', 'success');
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('deleteBtn', false);
+            }
+        }
+
+        // ---- GRAPH ----
+        async function doGraph() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            if (!document.getElementById('graphEntity').value.trim()) { toast('Entity name is required', 'error'); return; }
+            setLoading('graphBtn', true);
+            try {
+                const data = await apiCall('POST', '/graph/neighbors', {
+                    user_id: getUserId(),
+                    entity_name: document.getElementById('graphEntity').value,
+                    depth: parseInt(document.getElementById('graphDepth').value) || 2,
+                });
+
+                const container = document.getElementById('graphResults');
+                if (data.length) {
+                    const entityName = document.getElementById('graphEntity').value;
+                    container.innerHTML = `
+                        <div class="card" style="margin-top: 1rem;">
+                            <div class="card-title" style="margin-bottom: 0.75rem;">Graph Neighbors (${data.length})</div>
+                            ${data.map(n => `
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                    <span class="graph-node">${escHtml(entityName)}</span>
+                                    <span class="graph-arrow">—<span class="graph-relation">${escHtml(n.relation)}</span>→</span>
+                                    <span class="graph-node">${escHtml(n.entity)}</span>
+                                    <span style="color: var(--text-muted); font-size: 0.7rem;">depth=${n.depth}${n.strength ? ` str=${n.strength}` : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="emoji">🕸️</div>No neighbors found</div>';
+                }
+
+                document.getElementById('graphResponse').style.display = 'block';
+                document.getElementById('graphResponseBody').textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('graphBtn', false);
+            }
+        }
+
+        // ---- LIFECYCLE ----
+        async function doLifecycle() {
+            const uid = getUserId();
+            if (!uid) { toast('User ID is required', 'error'); return; }
+            setLoading('lifecycleBtn', true);
+            try {
+                const data = await apiCall('POST', '/lifecycle/run', {
+                    user_id: getUserId(),
+                });
+
+                document.getElementById('lifecycleStats').style.display = 'block';
+                document.getElementById('lifecycleGrid').innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: var(--warning)">${data.memories_decayed}</div>
+                        <div class="stat-label">Decayed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: var(--accent)">${data.memories_consolidated}</div>
+                        <div class="stat-label">Consolidated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: var(--danger)">${data.memories_cleaned}</div>
+                        <div class="stat-label">Cleaned</div>
+                    </div>
+                `;
+
+                document.getElementById('lifecycleResponse').style.display = 'block';
+                document.getElementById('lifecycleResponseBody').textContent = JSON.stringify(data, null, 2);
+                toast('✅ Lifecycle complete', 'success');
+            } catch (e) {
+                toast('❌ ' + e.message, 'error');
+            } finally {
+                setLoading('lifecycleBtn', false);
+            }
+        }
+
+        // ---- QUICK TESTS ----
+        async function runTest(testName) {
+            const panel = document.getElementById('testResults');
+            const body = document.getElementById('testResultsBody');
+            panel.style.display = 'block';
+            body.textContent = `⏳ Running test: ${testName}...\n`;
+
+            function log(msg) { body.textContent += msg + '\n'; }
+
+            try {
+                if (testName === 'full_pipeline') {
+                    const uid = 'test_pipeline_' + Date.now();
+                    log(`\n📌 User: ${uid}`);
+
+                    // Step 1: Add
+                    log('\n--- Step 1: Add Memory ---');
+                    const addResult = await apiCall('POST', '/memory/add', {
+                        messages: [
+                            { role: 'user', content: 'I am a machine learning engineer at Google. I specialize in PyTorch and transformers.' },
+                            { role: 'assistant', content: 'That sounds interesting! Tell me more about your work.' },
+                        ],
+                        user_id: uid,
+                        conversation_id: 'test_conv',
+                    });
+                    log(`✅ Added ${addResult.memories_added} memories`);
+                    log(`   Entities: ${(addResult.entities_found || []).join(', ') || 'none'}`);
+                    log(`   Semantic facts: ${(addResult.semantic_facts || []).join('; ') || 'none'}`);
+
+                    // Step 2: Search
+                    log('\n--- Step 2: Search ---');
+                    const searchResult = await apiCall('POST', '/memory/search', {
+                        query: 'What does the user do?',
+                        user_id: uid,
+                        limit: 5,
+                    });
+                    log(`✅ Found ${searchResult.total} results`);
+                    (searchResult.results || []).forEach(r => {
+                        log(`   [${r.tier}/${r.memory_type}] "${r.text}" (score: ${r.score.toFixed(4)})`);
+                    });
+
+                    // Step 3: Graph
+                    log('\n--- Step 3: Graph ---');
+                    const graphResult = await apiCall('POST', '/graph/neighbors', {
+                        user_id: uid, entity_name: 'User', depth: 2,
+                    });
+                    log(`✅ Found ${graphResult.length} graph neighbors`);
+                    graphResult.forEach(n => {
+                        log(`   User --${n.relation}--> ${n.entity} (depth ${n.depth})`);
+                    });
+
+                    // Step 4: Lifecycle
+                    log('\n--- Step 4: Lifecycle ---');
+                    const lcResult = await apiCall('POST', '/lifecycle/run', { user_id: uid });
+                    log(`✅ Decayed: ${lcResult.memories_decayed}, Consolidated: ${lcResult.memories_consolidated}, Cleaned: ${lcResult.memories_cleaned}`);
+
+                    log('\n🎉 Full pipeline test PASSED!');
+                    toast('✅ Full pipeline test passed!', 'success');
+
+                } else if (testName === 'multi_user') {
+                    const uidA = 'test_iso_a_' + Date.now();
+                    const uidB = 'test_iso_b_' + Date.now();
+                    log(`\n📌 User A: ${uidA}`);
+                    log(`📌 User B: ${uidB}`);
+
+                    // Add different memories for each user
+                    log('\n--- Adding memories for User A ---');
+                    await apiCall('POST', '/memory/add', {
+                        messages: [{ role: 'user', content: 'I love Python and Django' }],
+                        user_id: uidA,
+                    });
+                    log('✅ User A memory added');
+
+                    log('\n--- Adding memories for User B ---');
+                    await apiCall('POST', '/memory/add', {
+                        messages: [{ role: 'user', content: 'I love Rust and actix-web' }],
+                        user_id: uidB,
+                    });
+                    log('✅ User B memory added');
+
+                    // Search as User A
+                    log('\n--- Searching as User A for "Rust" ---');
+                    const resultA = await apiCall('POST', '/memory/search', {
+                        query: 'Rust', user_id: uidA, limit: 5,
+                    });
+                    const foundRust = (resultA.results || []).some(r => r.text.toLowerCase().includes('rust'));
+                    log(foundRust
+                        ? '❌ FAIL: User A can see User B\'s Rust memory!'
+                        : '✅ User A cannot see User B\'s memories (isolation works)');
+
+                    // Search as User B
+                    log('\n--- Searching as User B for "Python" ---');
+                    const resultB = await apiCall('POST', '/memory/search', {
+                        query: 'Python', user_id: uidB, limit: 5,
+                    });
+                    const foundPython = (resultB.results || []).some(r => r.text.toLowerCase().includes('python'));
+                    log(foundPython
+                        ? '❌ FAIL: User B can see User A\'s Python memory!'
+                        : '✅ User B cannot see User A\'s memories (isolation works)');
+
+                    const passed = !foundRust && !foundPython;
+                    log(passed ? '\n🎉 Multi-user isolation test PASSED!' : '\n❌ Multi-user isolation test FAILED!');
+                    toast(passed ? '✅ Isolation test passed!' : '❌ Isolation test failed!', passed ? 'success' : 'error');
+
+                } else if (testName === 'search_quality') {
+                    const uid = 'test_quality_' + Date.now();
+                    log(`\n📌 User: ${uid}`);
+
+                    // Add diverse memories
+                    log('\n--- Adding diverse memories ---');
+                    const convs = [
+                        'I am a backend developer. I write Python and Go.',
+                        'My favorite framework is FastAPI for APIs and React for frontends.',
+                        'I live in San Francisco and work remotely for a startup.',
+                    ];
+                    for (const msg of convs) {
+                        await apiCall('POST', '/memory/add', {
+                            messages: [{ role: 'user', content: msg }],
+                            user_id: uid,
+                        });
+                    }
+                    log('✅ Added 3 conversation turns');
+
+                    // Search for different queries
+                    const queries = ['programming languages', 'where does the user live', 'frontend technology'];
+                    for (const q of queries) {
+                        log(`\n--- Searching: "${q}" ---`);
+                        const result = await apiCall('POST', '/memory/search', {
+                            query: q, user_id: uid, limit: 3,
+                        });
+                        log(`   ${result.total} results:`);
+                        (result.results || []).forEach(r => {
+                            log(`   [${r.score.toFixed(4)}] ${r.text}`);
+                        });
+                    }
+
+                    log('\n🎉 Search quality test complete (review results above)');
+                    toast('✅ Search quality test complete', 'success');
+
+                } else if (testName === 'lifecycle') {
+                    const uid = 'test_life_' + Date.now();
+                    log(`\n📌 User: ${uid}`);
+
+                    // Add several memories
+                    log('\n--- Adding memories ---');
+                    for (let i = 0; i < 5; i++) {
+                        await apiCall('POST', '/memory/add', {
+                            messages: [{ role: 'user', content: `Test fact number ${i}: User likes item_${i}` }],
+                            user_id: uid,
+                        });
+                    }
+                    log('✅ Added 5 conversation turns');
+
+                    // Search before lifecycle
+                    log('\n--- Search before lifecycle ---');
+                    const before = await apiCall('POST', '/memory/search', {
+                        query: 'user likes', user_id: uid, limit: 20,
+                    });
+                    log(`   ${before.total} memories found`);
+
+                    // Run lifecycle
+                    log('\n--- Running lifecycle ---');
+                    const lc = await apiCall('POST', '/lifecycle/run', { user_id: uid });
+                    log(`   Decayed: ${lc.memories_decayed}`);
+                    log(`   Consolidated: ${lc.memories_consolidated}`);
+                    log(`   Cleaned: ${lc.memories_cleaned}`);
+
+                    // Search after lifecycle
+                    log('\n--- Search after lifecycle ---');
+                    const after = await apiCall('POST', '/memory/search', {
+                        query: 'user likes', user_id: uid, limit: 20,
+                    });
+                    log(`   ${after.total} memories found`);
+
+                    log('\n🎉 Lifecycle test complete');
+                    toast('✅ Lifecycle test complete', 'success');
+                }
+            } catch (e) {
+                log(`\n❌ ERROR: ${e.message}`);
+                toast('❌ Test failed: ' + e.message, 'error');
+            }
+        }
+
+        // ---- Utility ----
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // ---- Init ----
+        checkHealth();
+        setInterval(checkHealth, 10000);
+    </script>
+</body>
+
+</html>

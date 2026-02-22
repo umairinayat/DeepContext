@@ -192,3 +192,120 @@ class TestLifecycleEndpoint:
         data = resp.json()
         assert data["memories_decayed"] == 2
         assert data["memories_consolidated"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Phase 6: API Hardening Tests
+# ---------------------------------------------------------------------------
+
+
+class TestAPIHardening:
+    """Edge cases and error paths for the API."""
+
+    @pytest.mark.asyncio
+    async def test_add_invalid_json_body(self, client):
+        """Posting malformed JSON should return 422."""
+        resp = await client.post(
+            "/memory/add",
+            content="this is not json",
+            headers={"Content-Type": "application/json"},
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_add_empty_messages(self, client, mock_engine):
+        """Empty messages list should still work (handled by engine)."""
+        resp = await client.post("/memory/add", json={
+            "messages": [],
+            "user_id": "u1",
+        })
+        assert resp.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_search_missing_query(self, client):
+        """Missing query field → 422."""
+        resp = await client.post("/memory/search", json={
+            "user_id": "u1",
+            # missing 'query'
+        })
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_search_missing_user_id(self, client):
+        """Missing user_id → 422."""
+        resp = await client.post("/memory/search", json={
+            "query": "test",
+            # missing 'user_id'
+        })
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_missing_text(self, client):
+        """Missing text field → 422."""
+        resp = await client.put("/memory/update", json={
+            "memory_id": 1,
+            "user_id": "u1",
+            # missing 'text'
+        })
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_delete_not_found_returns_404(self, client, mock_engine):
+        """delete() raising ValueError → 404."""
+        mock_engine.delete = AsyncMock(
+            side_effect=ValueError("Memory 999 not found for user u1")
+        )
+        resp = await client.request("DELETE", "/memory/delete", json={
+            "memory_id": 999,
+            "user_id": "u1",
+        })
+        assert resp.status_code == 404
+        assert "not found" in resp.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_add_engine_internal_error(self, client, mock_engine):
+        """Engine raising an unexpected exception → 500."""
+        mock_engine.add = AsyncMock(
+            side_effect=RuntimeError("Database connection lost")
+        )
+        resp = await client.post("/memory/add", json={
+            "messages": [{"role": "user", "content": "test"}],
+            "user_id": "u1",
+        })
+        assert resp.status_code == 500
+        assert "Database connection lost" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_graph_empty_entity_name(self, client, mock_engine):
+        """Empty entity name should still return a valid response."""
+        mock_engine.get_entity_graph = AsyncMock(return_value=[])
+        resp = await client.post("/graph/neighbors", json={
+            "user_id": "u1",
+            "entity_name": "",
+            "depth": 1,
+        })
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    @pytest.mark.asyncio
+    async def test_lifecycle_nonexistent_user(self, client, mock_engine):
+        """Lifecycle for non-existent user should return zeros."""
+        mock_engine.run_lifecycle = AsyncMock(return_value={
+            "memories_decayed": 0,
+            "memories_consolidated": 0,
+            "memories_cleaned": 0,
+        })
+        resp = await client.post("/lifecycle/run", json={
+            "user_id": "nonexistent_user_xyz",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["memories_decayed"] == 0
+
+    @pytest.mark.asyncio
+    async def test_dashboard_endpoint(self, client):
+        """The root / endpoint should serve the dashboard HTML."""
+        resp = await client.get("/")
+        assert resp.status_code == 200
+        assert "DeepContext" in resp.text
+

@@ -43,3 +43,5 @@ alembic/versions/*.pyc
 
 # Agent config (local tooling, not part of the project)
 .agent/
+
+.test/
