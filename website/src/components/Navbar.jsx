@@ -1,11 +1,14 @@
 import { NavLink } from 'react-router-dom'
 
+const BASE = import.meta.env.BASE_URL
+
 export default function Navbar() {
     return (
         <nav className="navbar">
             <div className="navbar-inner">
                 <NavLink to="/" className="navbar-logo">
-                    🧠 <span>DeepContext</span>
+                    <img src={`${BASE}logo.png`} alt="DeepContext" className="navbar-logo-img" />
+                    <span>DeepContext</span>
                 </NavLink>
                 <div className="navbar-links">
                     <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''} end>Home</NavLink>
