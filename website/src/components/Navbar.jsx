@@ -14,8 +14,9 @@ export default function Navbar() {
                     <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''} end>Home</NavLink>
                     <NavLink to="/docs" className={({ isActive }) => isActive ? 'active' : ''}>Docs</NavLink>
                     <NavLink to="/demo" className={({ isActive }) => isActive ? 'active' : ''}>Demo</NavLink>
+                    <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
                     <a href="https://github.com/umairinayat/DeepContext" target="_blank" rel="noreferrer" className="btn-nav">
-                        ⭐ GitHub
+                        GitHub
                     </a>
                 </div>
             </div>

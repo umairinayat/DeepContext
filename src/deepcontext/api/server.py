@@ -65,6 +65,26 @@ class LifecycleRequest(BaseModel):
     user_id: str
 
 
+class MemoryListRequest(BaseModel):
+    user_id: str
+    tier: Optional[str] = None
+    memory_type: Optional[str] = None
+    limit: int = Field(default=50, le=200)
+    offset: int = Field(default=0, ge=0)
+
+
+class FullGraphRequest(BaseModel):
+    user_id: str
+
+
+class EntitiesRequest(BaseModel):
+    user_id: str
+
+
+class StatsRequest(BaseModel):
+    user_id: str
+
+
 # ---------------------------------------------------------------------------
 # App lifecycle
 # ---------------------------------------------------------------------------
@@ -229,5 +249,61 @@ async def run_lifecycle(req: LifecycleRequest) -> dict[str, int]:
     engine = get_engine()
     try:
         return await engine.run_lifecycle(user_id=req.user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/memory/list")
+async def list_memories(req: MemoryListRequest) -> dict[str, Any]:
+    """
+    List all memories for a user with optional filtering and pagination.
+    """
+    engine = get_engine()
+    try:
+        return await engine.list_memories(
+            user_id=req.user_id,
+            tier=req.tier,
+            memory_type=req.memory_type,
+            limit=req.limit,
+            offset=req.offset,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/graph/full")
+async def full_graph(req: FullGraphRequest) -> dict[str, Any]:
+    """
+    Get the complete knowledge graph for a user.
+
+    Returns in react-force-graph format: {nodes: [...], links: [...]}.
+    """
+    engine = get_engine()
+    try:
+        return await engine.get_full_graph(user_id=req.user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/graph/entities")
+async def list_entities(req: EntitiesRequest) -> list[dict[str, Any]]:
+    """List all entities for a user (for entity picker dropdown)."""
+    engine = get_engine()
+    try:
+        return await engine.list_entities(user_id=req.user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/stats")
+async def get_stats(req: StatsRequest) -> dict[str, Any]:
+    """
+    Get summary statistics for a user.
+
+    Returns counts of memories by tier/type, entities, and relationships.
+    """
+    engine = get_engine()
+    try:
+        return await engine.get_stats(user_id=req.user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -259,6 +259,80 @@ class KnowledgeGraph:
 
             return context
 
+    async def get_all_entities(
+        self,
+        user_id: str,
+    ) -> list[Entity]:
+        """Get all entities for a user."""
+        async with self._session_factory() as session:
+            stmt = (
+                select(Entity)
+                .where(Entity.user_id == user_id)
+                .order_by(Entity.mention_count.desc())
+            )
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def get_full_graph(
+        self,
+        user_id: str,
+    ) -> dict[str, Any]:
+        """
+        Get all entities and relationships for a user.
+
+        Returns the graph in react-force-graph format:
+        {
+            "nodes": [{"id": name, "type": entity_type, "mentionCount": n, "val": n}, ...],
+            "links": [{"source": name, "target": name, "relation": str, "strength": float}, ...]
+        }
+        """
+        async with self._session_factory() as session:
+            # Fetch all entities
+            stmt = select(Entity).where(Entity.user_id == user_id)
+            result = await session.execute(stmt)
+            entities = result.scalars().all()
+
+            if not entities:
+                return {"nodes": [], "links": []}
+
+            id_to_name = {e.id: e.name for e in entities}
+
+            nodes = [
+                {
+                    "id": e.name,
+                    "type": e.entity_type,
+                    "mentionCount": e.mention_count,
+                    "val": max(e.mention_count, 1),
+                    "attributes": e.attributes or {},
+                }
+                for e in entities
+            ]
+
+            # Fetch all relationships
+            entity_ids = list(id_to_name.keys())
+            stmt = select(Relationship).where(
+                Relationship.user_id == user_id,
+                Relationship.source_entity_id.in_(entity_ids),
+            )
+            result = await session.execute(stmt)
+            rels = result.scalars().all()
+
+            links = []
+            for r in rels:
+                source_name = id_to_name.get(r.source_entity_id)
+                target_name = id_to_name.get(r.target_entity_id)
+                if source_name and target_name:
+                    links.append(
+                        {
+                            "source": source_name,
+                            "target": target_name,
+                            "relation": r.relation,
+                            "strength": r.strength,
+                        }
+                    )
+
+            return {"nodes": nodes, "links": links}
+
     @staticmethod
     async def _get_or_create_entity(
         session: AsyncSession,

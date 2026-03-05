@@ -33,7 +33,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deepcontext.core.clients import LLMClients
@@ -48,6 +48,7 @@ from deepcontext.core.types import (
 )
 from deepcontext.db.database import Database
 from deepcontext.db.models.memory import Memory
+from deepcontext.db.models.graph import Entity, Relationship
 from deepcontext.extraction.extractor import Extractor
 from deepcontext.graph.knowledge_graph import KnowledgeGraph
 from deepcontext.lifecycle.manager import LifecycleManager
@@ -385,6 +386,186 @@ class MemoryEngine:
         assert self._graph is not None
 
         return await self._graph.get_neighbors(user_id, entity_name, max_depth=depth)
+
+    # -----------------------------------------------------------------------
+    # LIST MEMORIES - Paginated listing with filters
+    # -----------------------------------------------------------------------
+
+    async def list_memories(
+        self,
+        user_id: str,
+        tier: Optional[str] = None,
+        memory_type: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """
+        List all memories for a user with optional filtering.
+
+        Args:
+            user_id: User whose memories to list
+            tier: Filter by tier (working/short_term/long_term)
+            memory_type: Filter by type (semantic/episodic/procedural)
+            limit: Maximum results per page
+            offset: Pagination offset
+
+        Returns:
+            Dict with total count and list of memories
+        """
+        self._check_init()
+        assert self._db is not None
+
+        async with self._db.session() as session:
+            # Build base query
+            base = select(Memory).where(
+                Memory.user_id == user_id,
+                Memory.is_active == True,  # noqa: E712
+            )
+            count_q = select(func.count(Memory.id)).where(
+                Memory.user_id == user_id,
+                Memory.is_active == True,  # noqa: E712
+            )
+
+            if tier:
+                base = base.where(Memory.tier == tier)
+                count_q = count_q.where(Memory.tier == tier)
+            if memory_type:
+                base = base.where(Memory.memory_type == memory_type)
+                count_q = count_q.where(Memory.memory_type == memory_type)
+
+            # Get total count
+            total_result = await session.execute(count_q)
+            total = total_result.scalar() or 0
+
+            # Get paginated results
+            stmt = base.order_by(Memory.created_at.desc()).limit(limit).offset(offset)
+            result = await session.execute(stmt)
+            memories = result.scalars().all()
+
+            return {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "memories": [
+                    {
+                        "id": m.id,
+                        "text": m.text,
+                        "memory_type": m.memory_type,
+                        "tier": m.tier,
+                        "importance": m.importance,
+                        "confidence": m.confidence,
+                        "access_count": m.access_count,
+                        "source_entities": m.source_entities or [],
+                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                        "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+                    }
+                    for m in memories
+                ],
+            }
+
+    # -----------------------------------------------------------------------
+    # FULL GRAPH - All entities + relationships for visualization
+    # -----------------------------------------------------------------------
+
+    async def get_full_graph(self, user_id: str) -> dict[str, Any]:
+        """
+        Get the complete knowledge graph for a user.
+
+        Returns in react-force-graph format:
+        {"nodes": [...], "links": [...]}
+        """
+        self._check_init()
+        assert self._graph is not None
+
+        return await self._graph.get_full_graph(user_id)
+
+    # -----------------------------------------------------------------------
+    # LIST ENTITIES - For dropdown/picker
+    # -----------------------------------------------------------------------
+
+    async def list_entities(self, user_id: str) -> list[dict[str, Any]]:
+        """
+        List all entities for a user.
+
+        Returns list of entity dicts sorted by mention count (desc).
+        """
+        self._check_init()
+        assert self._graph is not None
+
+        entities = await self._graph.get_all_entities(user_id)
+        return [
+            {
+                "id": e.id,
+                "name": e.name,
+                "entity_type": e.entity_type,
+                "mention_count": e.mention_count,
+                "attributes": e.attributes or {},
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+            for e in entities
+        ]
+
+    # -----------------------------------------------------------------------
+    # STATS - Summary statistics
+    # -----------------------------------------------------------------------
+
+    async def get_stats(self, user_id: str) -> dict[str, Any]:
+        """
+        Get summary statistics for a user.
+
+        Returns counts of memories by tier/type, entities, and relationships.
+        """
+        self._check_init()
+        assert self._db is not None
+
+        async with self._db.session() as session:
+            # Total active memories
+            total_q = select(func.count(Memory.id)).where(
+                Memory.user_id == user_id,
+                Memory.is_active == True,  # noqa: E712
+            )
+            total_result = await session.execute(total_q)
+            total_memories = total_result.scalar() or 0
+
+            # By tier
+            tier_counts: dict[str, int] = {}
+            for tier_val in ["working", "short_term", "long_term"]:
+                q = select(func.count(Memory.id)).where(
+                    Memory.user_id == user_id,
+                    Memory.is_active == True,  # noqa: E712
+                    Memory.tier == tier_val,
+                )
+                r = await session.execute(q)
+                tier_counts[tier_val] = r.scalar() or 0
+
+            # By type
+            type_counts: dict[str, int] = {}
+            for type_val in ["semantic", "episodic", "procedural"]:
+                q = select(func.count(Memory.id)).where(
+                    Memory.user_id == user_id,
+                    Memory.is_active == True,  # noqa: E712
+                    Memory.memory_type == type_val,
+                )
+                r = await session.execute(q)
+                type_counts[type_val] = r.scalar() or 0
+
+            # Entity count
+            entity_q = select(func.count(Entity.id)).where(Entity.user_id == user_id)
+            entity_result = await session.execute(entity_q)
+            total_entities = entity_result.scalar() or 0
+
+            # Relationship count
+            rel_q = select(func.count(Relationship.id)).where(Relationship.user_id == user_id)
+            rel_result = await session.execute(rel_q)
+            total_relationships = rel_result.scalar() or 0
+
+        return {
+            "total_memories": total_memories,
+            "by_tier": tier_counts,
+            "by_type": type_counts,
+            "total_entities": total_entities,
+            "total_relationships": total_relationships,
+        }
 
     # -----------------------------------------------------------------------
     # CLEANUP

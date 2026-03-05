@@ -16,6 +16,8 @@
     "prismjs": "^1.30.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-force-graph-2d": "^1.29.1",
+    "react-force-graph-3d": "^1.29.1",
     "react-router-dom": "^7.13.0"
   },
   "devDependencies": {
