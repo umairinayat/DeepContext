@@ -47,3 +47,4 @@ alembic/versions/*.pyc
 .test/
 
 .claude/
+everything-claude-code/
