@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { addMemory } from '../api/client'
+import { useToast } from '../context/ToastContext'
 
 const PLACEHOLDER = `Paste a conversation here, e.g.:
 
@@ -7,7 +8,8 @@ USER: I've been working with Python and FastAPI lately.
 ASSISTANT: That's great! FastAPI is excellent for async APIs.
 USER: Yeah, I prefer it over Flask for new projects.`
 
-export default function ChatPanel({ userId }) {
+export default function ChatPanel() {
+  const toast = useToast()
   const [text, setText] = useState('')
   const [conversationId, setConversationId] = useState('default')
   const [result, setResult] = useState(null)
@@ -45,8 +47,14 @@ export default function ChatPanel({ userId }) {
     return messages
   }
 
+  // Live preview of parsed messages
+  const parsedPreview = useMemo(() => {
+    if (!text.trim()) return []
+    return parseMessages(text)
+  }, [text])
+
   async function handleExtract() {
-    if (!text.trim() || !userId) return
+    if (!text.trim()) return
     setLoading(true)
     setError(null)
     setResult(null)
@@ -56,10 +64,12 @@ export default function ChatPanel({ userId }) {
         setError('Could not parse any messages from the input.')
         return
       }
-      const res = await addMemory(messages, userId, conversationId)
+      const res = await addMemory(messages, conversationId)
       setResult(res)
+      toast.success(`Extracted ${res.memories_added} memories`)
     } catch (e) {
       setError(e.message)
+      toast.error(`Extraction failed: ${e.message}`)
     } finally {
       setLoading(false)
     }
@@ -88,10 +98,25 @@ export default function ChatPanel({ userId }) {
         rows={10}
       />
 
+      {/* Message Preview */}
+      {parsedPreview.length > 0 && (
+        <div className="message-preview">
+          <div className="message-preview-title">
+            Preview ({parsedPreview.length} message{parsedPreview.length !== 1 ? 's' : ''})
+          </div>
+          {parsedPreview.map((msg, i) => (
+            <div key={i} className="message-preview-item">
+              <span className={`message-preview-role role-${msg.role}`}>{msg.role}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>{msg.content}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <button
         className="btn btn-primary chat-extract-btn"
         onClick={handleExtract}
-        disabled={loading || !text.trim() || !userId}
+        disabled={loading || !text.trim()}
       >
         {loading ? 'Extracting...' : 'Extract Memories'}
       </button>

@@ -1,21 +1,29 @@
 import { useState } from 'react'
 import { runLifecycle } from '../api/client'
+import { useToast } from '../context/ToastContext'
 
-export default function LifecycleControls({ userId }) {
+export default function LifecycleControls() {
+  const toast = useToast()
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   async function handleRun() {
-    if (!userId) return
     setLoading(true)
     setError(null)
     setResult(null)
     try {
-      const res = await runLifecycle(userId)
+      const res = await runLifecycle()
       setResult(res)
+      const total = (res.memories_decayed || 0) + (res.memories_consolidated || 0) + (res.memories_cleaned || 0)
+      if (total > 0) {
+        toast.success(`Lifecycle complete: ${total} memories processed`)
+      } else {
+        toast.info('Lifecycle complete: no changes needed')
+      }
     } catch (e) {
       setError(e.message)
+      toast.error(`Lifecycle failed: ${e.message}`)
     } finally {
       setLoading(false)
     }
@@ -34,7 +42,7 @@ export default function LifecycleControls({ userId }) {
       <button
         className="btn btn-primary"
         onClick={handleRun}
-        disabled={loading || !userId}
+        disabled={loading}
       >
         {loading ? 'Running...' : 'Run Lifecycle'}
       </button>

@@ -45,3 +45,5 @@ alembic/versions/*.pyc
 .agent/
 
 .test/
+
+.claude/

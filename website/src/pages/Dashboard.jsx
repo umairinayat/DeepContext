@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 import StatsCards from '../components/StatsCards'
 import ChatPanel from '../components/ChatPanel'
 import GraphViz from '../components/GraphViz'
@@ -15,10 +16,23 @@ const TABS = [
 ]
 
 export default function Dashboard() {
-  const [userId, setUserId] = useState('default_user')
+  const { user, hasApiKey } = useAuth()
   const [activeTab, setActiveTab] = useState('stats')
   const [backendStatus, setBackendStatus] = useState('checking')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Track which tabs have been visited (lazy mount)
+  const [mountedTabs, setMountedTabs] = useState(new Set(['stats']))
+
+  function switchTab(tabId) {
+    setActiveTab(tabId)
+    setMountedTabs(prev => {
+      if (prev.has(tabId)) return prev
+      const next = new Set(prev)
+      next.add(tabId)
+      return next
+    })
+  }
 
   // Check backend connectivity
   useEffect(() => {
@@ -28,6 +42,8 @@ export default function Dashboard() {
   }, [])
 
   function handleRefresh() {
+    // Reset mounted tabs to force remount all
+    setMountedTabs(new Set([activeTab]))
     setRefreshKey(k => k + 1)
   }
 
@@ -44,15 +60,12 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="dashboard-header-right">
-          <div className="user-id-input">
-            <label>User ID:</label>
-            <input
-              type="text"
-              value={userId}
-              onChange={e => setUserId(e.target.value)}
-              placeholder="Enter user ID"
-            />
-          </div>
+          <span className="dashboard-user">
+            {user?.username}
+          </span>
+          <span className={`badge ${hasApiKey ? 'badge-green' : 'badge-orange'}`}>
+            {hasApiKey ? 'API Key Set' : 'No API Key'}
+          </span>
           <button className="btn btn-outline btn-sm" onClick={handleRefresh}>
             Refresh
           </button>
@@ -65,26 +78,42 @@ export default function Dashboard() {
         </div>
       )}
 
+      {!hasApiKey && backendStatus === 'connected' && (
+        <div className="dashboard-warning dashboard-warning-info">
+          No API key configured. Go to <a href="#/settings">Settings</a> to add your OpenRouter API key before using memory extraction.
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div className="dashboard-tabs">
         {TABS.map(tab => (
           <button
             key={tab.id}
             className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => switchTab(tab.id)}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content - show/hide instead of conditional render to preserve state */}
       <div className="dashboard-content" key={refreshKey}>
-        {activeTab === 'stats' && <StatsCards userId={userId} />}
-        {activeTab === 'chat' && <ChatPanel userId={userId} />}
-        {activeTab === 'graph' && <GraphViz userId={userId} />}
-        {activeTab === 'memories' && <MemoryBrowser userId={userId} />}
-        {activeTab === 'lifecycle' && <LifecycleControls userId={userId} />}
+        <div style={{ display: activeTab === 'stats' ? 'block' : 'none' }}>
+          {mountedTabs.has('stats') && <StatsCards />}
+        </div>
+        <div style={{ display: activeTab === 'chat' ? 'block' : 'none' }}>
+          {mountedTabs.has('chat') && <ChatPanel />}
+        </div>
+        <div style={{ display: activeTab === 'graph' ? 'block' : 'none' }}>
+          {mountedTabs.has('graph') && <GraphViz />}
+        </div>
+        <div style={{ display: activeTab === 'memories' ? 'block' : 'none' }}>
+          {mountedTabs.has('memories') && <MemoryBrowser />}
+        </div>
+        <div style={{ display: activeTab === 'lifecycle' ? 'block' : 'none' }}>
+          {mountedTabs.has('lifecycle') && <LifecycleControls />}
+        </div>
       </div>
     </div>
   )

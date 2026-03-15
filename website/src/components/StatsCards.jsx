@@ -1,25 +1,48 @@
 import { useState, useEffect } from 'react'
 import { getStats } from '../api/client'
 
-export default function StatsCards({ userId }) {
+function SkeletonCards() {
+  return (
+    <div className="stats-cards">
+      <div className="skeleton skeleton-card" />
+      <div className="skeleton skeleton-card" />
+      <div className="skeleton skeleton-card" />
+      <div className="stats-breakdown">
+        <div className="skeleton skeleton-card" style={{ height: 80 }} />
+        <div className="skeleton skeleton-card" style={{ height: 80 }} />
+      </div>
+    </div>
+  )
+}
+
+export default function StatsCards() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!userId) return
     setLoading(true)
     setError(null)
-    getStats(userId)
+    getStats()
       .then(setStats)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [userId])
+  }, [])
 
-  if (!userId) return <div className="stats-empty">Enter a User ID to see stats</div>
-  if (loading) return <div className="stats-loading">Loading stats...</div>
+  if (loading) return <SkeletonCards />
   if (error) return <div className="stats-error">Error: {error}</div>
-  if (!stats) return null
+
+  if (!stats || (stats.total_memories === 0 && stats.total_entities === 0)) {
+    return (
+      <div className="empty-state">
+        <div className="empty-state-icon">{'\ud83d\udcca'}</div>
+        <div className="empty-state-title">No data to show</div>
+        <div className="empty-state-desc">
+          Start by extracting memories from conversations in the Chat Input tab.
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="stats-cards">
@@ -45,6 +68,9 @@ export default function StatsCards({ userId }) {
                 {tier.replace('_', ' ')}: {count}
               </span>
             ))}
+            {Object.keys(stats.by_tier).length === 0 && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No tier data</span>
+            )}
           </div>
         </div>
         <div className="stats-group">
@@ -55,6 +81,9 @@ export default function StatsCards({ userId }) {
                 {type}: {count}
               </span>
             ))}
+            {Object.keys(stats.by_type).length === 0 && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No type data</span>
+            )}
           </div>
         </div>
       </div>

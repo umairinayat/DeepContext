@@ -17,11 +17,12 @@ function getColor(type) {
   return TYPE_COLORS[type] || TYPE_COLORS.other
 }
 
-export default function GraphViz({ userId }) {
+export default function GraphViz() {
   const [graphData, setGraphData] = useState({ nodes: [], links: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [is3D, setIs3D] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [GraphComponent, setGraphComponent] = useState(null)
   const graphRef = useRef()
@@ -44,6 +45,16 @@ export default function GraphViz({ userId }) {
     return () => ro.disconnect()
   }, [])
 
+  // Close fullscreen on Escape key
+  useEffect(() => {
+    if (!isFullscreen) return
+    function handleKey(e) {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isFullscreen])
+
   // Dynamically import the graph component based on 2D/3D toggle
   useEffect(() => {
     async function loadGraph() {
@@ -60,20 +71,18 @@ export default function GraphViz({ userId }) {
 
   // Fetch graph data
   useEffect(() => {
-    if (!userId) return
     setLoading(true)
     setError(null)
-    getFullGraph(userId)
+    getFullGraph()
       .then(data => setGraphData(data))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [userId])
+  }, [])
 
   // Click on node to expand neighbors
   const handleNodeClick = useCallback(async (node) => {
-    if (!userId) return
     try {
-      const neighbors = await getNeighbors(userId, node.id, 1)
+      const neighbors = await getNeighbors(node.id, 1)
       if (neighbors.length === 0) return
 
       setGraphData(prev => {
@@ -115,7 +124,7 @@ export default function GraphViz({ userId }) {
     } catch (e) {
       console.error('Failed to expand node:', e)
     }
-  }, [userId])
+  }, [])
 
   // Node canvas drawing (2D)
   const paintNode = useCallback((node, ctx, globalScale) => {
@@ -143,12 +152,39 @@ export default function GraphViz({ userId }) {
     ctx.fillText(label, node.x, node.y + size + 2)
   }, [hovered])
 
-  if (!userId) return <div className="graph-empty">Enter a User ID to view the knowledge graph</div>
-  if (loading) return <div className="graph-loading">Loading graph...</div>
+  if (loading) return (
+    <div className="graph-viz">
+      <div className="graph-toolbar">
+        <span className="skeleton" style={{ width: 44, height: 30 }} />
+        <span className="skeleton" style={{ width: 44, height: 30 }} />
+        <span className="skeleton" style={{ width: 90, height: 30 }} />
+      </div>
+      <div className="graph-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div className="auth-loading-spinner" style={{ margin: '0 auto 1rem' }} />
+          Loading knowledge graph...
+        </div>
+      </div>
+    </div>
+  )
   if (error) return <div className="graph-error">Error: {error}</div>
 
+  if (!loading && graphData.nodes.length === 0) {
+    return (
+      <div className="graph-viz">
+        <div className="empty-state" style={{ minHeight: 400 }}>
+          <div className="empty-state-icon">{'\ud83d\udd78\ufe0f'}</div>
+          <div className="empty-state-title">No knowledge graph data</div>
+          <div className="empty-state-desc">
+            Extract memories from conversations in the Chat Input tab to build your knowledge graph.
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="graph-viz">
+    <div className={`graph-viz ${isFullscreen ? 'graph-viz-fullscreen' : ''}`}>
       <div className="graph-toolbar">
         <button
           className={`btn btn-sm ${!is3D ? 'btn-primary' : 'btn-outline'}`}
@@ -161,6 +197,13 @@ export default function GraphViz({ userId }) {
           onClick={() => setIs3D(true)}
         >
           3D
+        </button>
+        <button
+          className="btn btn-sm btn-outline"
+          onClick={() => setIsFullscreen(f => !f)}
+          title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+        >
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
         <span className="graph-info">
           {graphData.nodes.length} nodes, {graphData.links.length} links
