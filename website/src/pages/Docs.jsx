@@ -16,6 +16,7 @@ const sections = [
 
 export default function Docs() {
     const [active, setActive] = useState('installation')
+    const [tocOpen, setTocOpen] = useState(false)
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -35,21 +36,68 @@ export default function Docs() {
         return () => observer.disconnect()
     }, [])
 
+    function handleTocLinkClick(id) {
+        setActive(id)
+        setTocOpen(false)
+    }
+
     return (
         <div className="container">
+            {/* Mobile TOC */}
+            <div className="docs-toc-mobile">
+                <button
+                    className="docs-toc-toggle"
+                    onClick={() => setTocOpen(o => !o)}
+                    aria-expanded={tocOpen}
+                >
+                    <span>On this page: {sections.find(s => s.id === active)?.label}</span>
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ transform: tocOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                    >
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </button>
+                {tocOpen && (
+                    <div className="docs-toc-dropdown">
+                        {sections.map(s => (
+                            <a
+                                key={s.id}
+                                href={`#${s.id}`}
+                                className={active === s.id ? 'active' : ''}
+                                onClick={() => handleTocLinkClick(s.id)}
+                            >
+                                {s.label}
+                            </a>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div className="docs-layout">
+                {/* Sticky sidebar */}
                 <aside className="docs-sidebar">
                     <div className="sidebar-label">Documentation</div>
-                    {sections.map(s => (
-                        <a
-                            key={s.id}
-                            href={`#${s.id}`}
-                            className={active === s.id ? 'active' : ''}
-                            onClick={() => setActive(s.id)}
-                        >
-                            {s.label}
-                        </a>
-                    ))}
+                    <ul className="docs-sidebar-list">
+                        {sections.map(s => (
+                            <li key={s.id}>
+                                <a
+                                    href={`#${s.id}`}
+                                    className={active === s.id ? 'active' : ''}
+                                    onClick={() => setActive(s.id)}
+                                >
+                                    {s.label}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
                 </aside>
 
                 <main className="docs-content">
@@ -143,7 +191,7 @@ asyncio.run(main())`} />
     include_graph=True,       # enable graph expansion
 )`} />
 
-                    <h3>Update & Delete</h3>
+                    <h3>Update &amp; Delete</h3>
                     <CodeBlock code={`# Update text and re-embed
 await ctx.update(memory_id=1, text="User loves Python", user_id="user_1")
 
@@ -168,7 +216,7 @@ for n in neighbors:
                         <thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead>
                         <tbody>
                             <tr><td><code>semantic</code></td><td>Factual knowledge</td><td>"User is a Python developer"</td></tr>
-                            <tr><td><code>episodic</code></td><td>Events & experiences</td><td>"User asked about FastAPI today"</td></tr>
+                            <tr><td><code>episodic</code></td><td>Events &amp; experiences</td><td>"User asked about FastAPI today"</td></tr>
                             <tr><td><code>procedural</code></td><td>How-to knowledge</td><td>"User deploys with Docker"</td></tr>
                         </tbody>
                     </table>
@@ -193,7 +241,7 @@ for n in neighbors:
                         <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
                         <tbody>
                             <tr><td><code>GET</code></td><td><code>/health</code></td><td>Health check</td></tr>
-                            <tr><td><code>POST</code></td><td><code>/memory/add</code></td><td>Extract & store memories</td></tr>
+                            <tr><td><code>POST</code></td><td><code>/memory/add</code></td><td>Extract &amp; store memories</td></tr>
                             <tr><td><code>POST</code></td><td><code>/memory/search</code></td><td>Hybrid search</td></tr>
                             <tr><td><code>PUT</code></td><td><code>/memory/update</code></td><td>Update memory text</td></tr>
                             <tr><td><code>DELETE</code></td><td><code>/memory/delete</code></td><td>Soft-delete a memory</td></tr>

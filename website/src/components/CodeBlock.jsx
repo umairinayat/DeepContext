@@ -3,6 +3,7 @@ import Prism from 'prismjs'
 import 'prismjs/components/prism-python'
 import 'prismjs/components/prism-bash'
 import 'prismjs/components/prism-json'
+import CopyButton from './CopyButton'
 
 export default function CodeBlock({ code, language = 'python', header }) {
     const codeRef = useRef()
@@ -23,11 +24,17 @@ export default function CodeBlock({ code, language = 'python', header }) {
                     <span style={{ marginLeft: '0.5rem' }}>{header || `${language}`}</span>
                 </div>
             )}
-            <pre style={header !== false ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 } : {}}>
-                <code ref={codeRef} className={`language-${language}`}>
-                    {code.trim()}
-                </code>
-            </pre>
+            <div style={{ position: 'relative' }}>
+                <CopyButton
+                    text={code.trim()}
+                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', zIndex: 1 }}
+                />
+                <pre style={header !== false ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 } : {}}>
+                    <code ref={codeRef} className={`language-${language}`}>
+                        {code.trim()}
+                    </code>
+                </pre>
+            </div>
         </div>
     )
 }

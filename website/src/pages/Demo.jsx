@@ -2,7 +2,12 @@ import { useState } from 'react'
 import CodeBlock from '../components/CodeBlock'
 
 const TABS = ['add', 'search', 'graph', 'lifecycle']
-const TAB_LABELS = { add: '💬 Add Memory', search: '🔍 Search', graph: '🕸️ Graph', lifecycle: '♻️ Lifecycle' }
+const TAB_LABELS = {
+    add: 'Add Memory',
+    search: 'Search',
+    graph: 'Graph',
+    lifecycle: 'Lifecycle',
+}
 
 function DemoTab({ active, children }) {
     return active ? <div>{children}</div> : null
@@ -90,19 +95,22 @@ export default function Demo() {
     const handlers = { add: handleAdd, search: handleSearch, graph: handleGraph, lifecycle: handleLifecycle }
 
     return (
-        <div className="container">
-            <div className="demo-layout">
-                <div className="demo-header">
+        <div className="demo-page">
+            <div className="container">
+                {/* Page header */}
+                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <h1>Interactive Demo</h1>
-                    <p>Try DeepContext's core operations — simulated responses show what the real API returns.</p>
+                    <p style={{ color: 'var(--text-secondary)', maxWidth: '560px', margin: '0.75rem auto 0' }}>
+                        Try DeepContext's core operations — simulated responses show what the real API returns.
+                    </p>
                 </div>
 
                 {/* Tab bar */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <div className="demo-tabs">
                     {TABS.map(t => (
                         <button
                             key={t}
-                            className={`btn ${tab === t ? 'btn-primary' : 'btn-outline'}`}
+                            className={`demo-tab btn btn-pill${tab === t ? ' active' : ''}`}
                             onClick={() => { setTab(t); setOutput('') }}
                         >
                             {TAB_LABELS[t]}
@@ -110,9 +118,10 @@ export default function Demo() {
                     ))}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
-                    {/* Left: Input */}
-                    <div className="feature-card" style={{ padding: '1.5rem' }}>
+                {/* Two-column content */}
+                <div className="demo-content">
+                    {/* Left: Input card */}
+                    <div className="demo-input-card card">
                         <DemoTab active={tab === 'add'}>
                             <h3 style={{ marginBottom: '0.75rem' }}>Add Memory</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
@@ -164,17 +173,17 @@ export default function Demo() {
                         </DemoTab>
 
                         <button
-                            className="btn btn-primary"
+                            className="btn btn-primary btn-pill"
                             style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
                             onClick={handlers[tab]}
                             disabled={loading}
                         >
-                            {loading ? '⏳ Processing...' : '▶ Run'}
+                            {loading ? 'Processing...' : 'Run'}
                         </button>
                     </div>
 
-                    {/* Right: Output */}
-                    <div className="feature-card" style={{ padding: '1.5rem' }}>
+                    {/* Right: Output card */}
+                    <div className="demo-output-card card">
                         <h3 style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span style={{ color: 'var(--green)' }}>●</span> Response
                         </h3>
@@ -187,7 +196,7 @@ export default function Demo() {
                                 color: 'var(--text-muted)',
                                 fontSize: '0.9rem',
                             }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
+                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>▶</div>
                                 Click "Run" to see the response
                             </div>
                         )}
