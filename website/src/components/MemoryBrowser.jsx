@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import { listMemories, searchMemory } from '../api/client'
+import SlidePanel from './SlidePanel'
+import ErrorBanner from './ErrorBanner'
+import EmptyState from './EmptyState'
+import { SkeletonRow } from './Skeleton'
 
 export default function MemoryBrowser({ userId }) {
   const [memories, setMemories] = useState([])
@@ -15,7 +19,7 @@ export default function MemoryBrowser({ userId }) {
   const [page, setPage] = useState(0)
   const LIMIT = 20
 
-  // Selected memory for detail view
+  // Selected memory for slide panel
   const [selected, setSelected] = useState(null)
 
   useEffect(() => {
@@ -85,38 +89,60 @@ export default function MemoryBrowser({ userId }) {
     doSearch()
   }
 
+  function handleClearSearch() {
+    setSearchQuery('')
+    setIsSearchMode(false)
+    doList()
+  }
+
   const totalPages = Math.ceil(total / LIMIT)
 
-  if (!userId) return <div className="memory-empty">Enter a User ID to browse memories</div>
+  if (!userId) {
+    return (
+      <EmptyState
+        message="Enter a User ID above to browse memories."
+        actionLabel="Add Memories"
+        actionTo="/dashboard/chat"
+      />
+    )
+  }
 
   return (
     <div className="memory-browser">
       {/* Search & Filters */}
-      <div className="memory-controls">
+      <div className="memory-search-bar">
         <form className="memory-search-form" onSubmit={handleSearchSubmit}>
           <input
             type="text"
-            className="memory-search-input"
+            className="input-field"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search memories..."
           />
-          <button type="submit" className="btn btn-primary btn-sm">Search</button>
+          <button type="submit" className="btn btn-primary btn-sm btn-pill">Search</button>
           {isSearchMode && (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => { setSearchQuery(''); setIsSearchMode(false); doList() }}>
+            <button type="button" className="btn btn-outline btn-sm btn-pill" onClick={handleClearSearch}>
               Clear
             </button>
           )}
         </form>
 
         <div className="memory-filters">
-          <select value={tier} onChange={e => { setTier(e.target.value); setPage(0) }}>
+          <select
+            className="input-field input-field-sm"
+            value={tier}
+            onChange={e => { setTier(e.target.value); setPage(0) }}
+          >
             <option value="">All Tiers</option>
             <option value="working">Working</option>
             <option value="short_term">Short Term</option>
             <option value="long_term">Long Term</option>
           </select>
-          <select value={memoryType} onChange={e => { setMemoryType(e.target.value); setPage(0) }}>
+          <select
+            className="input-field input-field-sm"
+            value={memoryType}
+            onChange={e => { setMemoryType(e.target.value); setPage(0) }}
+          >
             <option value="">All Types</option>
             <option value="semantic">Semantic</option>
             <option value="episodic">Episodic</option>
@@ -126,66 +152,136 @@ export default function MemoryBrowser({ userId }) {
       </div>
 
       {/* Status */}
-      <div className="memory-status">
-        {loading ? 'Loading...' : `${total} memor${total === 1 ? 'y' : 'ies'} found`}
-        {isSearchMode && <span className="memory-search-label"> (search results)</span>}
+      <div className="memory-status text-muted text-sm">
+        {loading
+          ? 'Loading...'
+          : `${total} memor${total === 1 ? 'y' : 'ies'} found`}
+        {isSearchMode && <span className="memory-search-label"> &mdash; search results</span>}
       </div>
 
-      {error && <div className="memory-error">Error: {error}</div>}
+      {error && <ErrorBanner message={error} onRetry={isSearchMode ? doSearch : doList} />}
 
       {/* Memory list */}
-      <div className="memory-list">
-        {memories.map(m => (
-          <div
-            key={m.id}
-            className={`memory-item ${selected?.id === m.id ? 'memory-item-selected' : ''}`}
-            onClick={() => setSelected(selected?.id === m.id ? null : m)}
-          >
-            <div className="memory-item-header">
-              <span className={`badge tier-${m.tier || 'unknown'}`}>{(m.tier || 'unknown').replace('_', ' ')}</span>
-              <span className={`badge type-${m.memory_type || 'unknown'}`}>{m.memory_type || 'unknown'}</span>
-              {m.score !== undefined && <span className="badge badge-cyan">score: {m.score.toFixed(3)}</span>}
-              <span className="memory-importance">imp: {m.importance?.toFixed(2) ?? 'N/A'}</span>
-            </div>
-            <div className="memory-item-text">{m.text}</div>
-
-            {selected?.id === m.id && (
-              <div className="memory-item-detail">
-                <div><strong>ID:</strong> {m.id}</div>
-                <div><strong>Confidence:</strong> {m.confidence?.toFixed(2)}</div>
-                {m.source_entities?.length > 0 && (
-                  <div>
-                    <strong>Entities:</strong>{' '}
-                    {m.source_entities.map((e, i) => <span key={i} className="badge badge-purple">{e}</span>)}
-                  </div>
-                )}
-                <div><strong>Created:</strong> {m.created_at ? new Date(m.created_at).toLocaleString() : 'N/A'}</div>
+      {loading ? (
+        <SkeletonRow count={6} />
+      ) : !error && memories.length === 0 ? (
+        <EmptyState
+          message={isSearchMode ? 'No memories match your search.' : 'No memories found for this user.'}
+          actionLabel={isSearchMode ? 'Clear Search' : 'Add Memories'}
+          onAction={isSearchMode ? handleClearSearch : undefined}
+          actionTo={isSearchMode ? undefined : '/dashboard/chat'}
+        />
+      ) : (
+        <div className="memory-list">
+          {memories.map(m => (
+            <div
+              key={m.id}
+              className={`memory-row ${selected?.id === m.id ? 'memory-row-active' : ''}`}
+              onClick={() => setSelected(m)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && setSelected(m)}
+            >
+              <div className="memory-row-text">{m.text}</div>
+              <div className="memory-row-badges">
+                <span className={`badge badge-tier-${m.tier || 'unknown'}`}>
+                  {(m.tier || 'unknown').replace('_', ' ')}
+                </span>
+                <span className={`badge badge-type-${m.memory_type || 'unknown'}`}>
+                  {m.memory_type || 'unknown'}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+              {m.score !== undefined && (
+                <span className="memory-row-score text-muted text-sm">
+                  {m.score.toFixed(3)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && !isSearchMode && (
         <div className="memory-pagination">
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={page === 0}
-            onClick={() => setPage(p => p - 1)}
-          >
-            Previous
-          </button>
-          <span className="memory-page-info">Page {page + 1} of {totalPages}</span>
-          <button
-            className="btn btn-outline btn-sm"
-            disabled={page >= totalPages - 1}
-            onClick={() => setPage(p => p + 1)}
-          >
-            Next
-          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              className={`btn btn-sm btn-pill ${i === page ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setPage(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
         </div>
       )}
+
+      {/* Slide panel for memory detail */}
+      <SlidePanel
+        isOpen={!!selected}
+        onClose={() => setSelected(null)}
+        title="Memory Detail"
+      >
+        {selected && (
+          <div className="memory-detail">
+            <div className="detail-row">
+              <span className="detail-label">Text</span>
+              <span className="detail-value">{selected.text}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">ID</span>
+              <span className="detail-value text-muted text-sm">{selected.id}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Tier</span>
+              <span className="detail-value">
+                <span className={`badge badge-tier-${selected.tier || 'unknown'}`}>
+                  {(selected.tier || 'unknown').replace('_', ' ')}
+                </span>
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Type</span>
+              <span className="detail-value">
+                <span className={`badge badge-type-${selected.memory_type || 'unknown'}`}>
+                  {selected.memory_type || 'unknown'}
+                </span>
+              </span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Importance</span>
+              <span className="detail-value">{selected.importance?.toFixed(2) ?? 'N/A'}</span>
+            </div>
+            <div className="detail-row">
+              <span className="detail-label">Confidence</span>
+              <span className="detail-value">{selected.confidence?.toFixed(2) ?? 'N/A'}</span>
+            </div>
+            {selected.source_entities?.length > 0 && (
+              <div className="detail-row">
+                <span className="detail-label">Entities</span>
+                <span className="detail-value">
+                  <div className="entity-chips">
+                    {selected.source_entities.map((e, i) => (
+                      <span key={i} className="badge badge-purple">{e}</span>
+                    ))}
+                  </div>
+                </span>
+              </div>
+            )}
+            <div className="detail-row">
+              <span className="detail-label">Created</span>
+              <span className="detail-value text-muted text-sm">
+                {selected.created_at ? new Date(selected.created_at).toLocaleString() : 'N/A'}
+              </span>
+            </div>
+
+            <div className="slide-panel-footer">
+              <button className="btn btn-outline btn-sm btn-pill">Edit</button>
+              <button className="btn btn-danger btn-sm btn-pill">Delete</button>
+            </div>
+          </div>
+        )}
+      </SlidePanel>
     </div>
   )
 }

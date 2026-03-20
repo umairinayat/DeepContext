@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react'
 import { getFullGraph, getNeighbors } from '../api/client'
+import ErrorBanner from './ErrorBanner'
+import EmptyState from './EmptyState'
 
 // Color map for entity types
 const TYPE_COLORS = {
-  person: '#ec4899',      // pink
-  organization: '#f97316', // orange
-  technology: '#6366f1',   // accent/indigo
-  concept: '#06b6d4',      // cyan
-  location: '#22c55e',     // green
-  event: '#eab308',        // yellow
-  preference: '#a855f7',   // purple
-  other: '#71717a',        // muted
+  person: '#EC4899',
+  organization: '#F59E0B',
+  technology: '#6C5CE7',
+  concept: '#06B6D4',
+  location: '#10B981',
+  event: '#A855F7',
+  preference: '#F59E0B',
+  other: '#5A6178',
 }
 
 function getColor(type) {
@@ -22,6 +24,7 @@ export default function GraphViz({ userId }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [is3D, setIs3D] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [hovered, setHovered] = useState(null)
   const [GraphComponent, setGraphComponent] = useState(null)
   const graphRef = useRef()
@@ -44,6 +47,16 @@ export default function GraphViz({ userId }) {
     return () => ro.disconnect()
   }, [])
 
+  // Close fullscreen on Escape key
+  useEffect(() => {
+    if (!isFullscreen) return
+    function handleKey(e) {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isFullscreen])
+
   // Dynamically import the graph component based on 2D/3D toggle
   useEffect(() => {
     async function loadGraph() {
@@ -58,8 +71,7 @@ export default function GraphViz({ userId }) {
     loadGraph()
   }, [is3D])
 
-  // Fetch graph data
-  useEffect(() => {
+  function fetchGraph() {
     if (!userId) return
     setLoading(true)
     setError(null)
@@ -67,6 +79,11 @@ export default function GraphViz({ userId }) {
       .then(data => setGraphData(data))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
+  }
+
+  // Fetch graph data
+  useEffect(() => {
+    fetchGraph()
   }, [userId])
 
   // Click on node to expand neighbors
@@ -143,27 +160,40 @@ export default function GraphViz({ userId }) {
     ctx.fillText(label, node.x, node.y + size + 2)
   }, [hovered])
 
-  if (!userId) return <div className="graph-empty">Enter a User ID to view the knowledge graph</div>
-  if (loading) return <div className="graph-loading">Loading graph...</div>
-  if (error) return <div className="graph-error">Error: {error}</div>
+  if (!userId) {
+    return (
+      <EmptyState
+        message="Enter a User ID above to visualize the knowledge graph."
+        actionLabel="Add Memories"
+        actionTo="/dashboard/chat"
+      />
+    )
+  }
 
   return (
-    <div className="graph-viz">
+    <div className={`graph-page ${isFullscreen ? 'graph-fullscreen' : ''}`}>
       <div className="graph-toolbar">
         <button
-          className={`btn btn-sm ${!is3D ? 'btn-primary' : 'btn-outline'}`}
+          className={`btn btn-sm btn-pill ${!is3D ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setIs3D(false)}
         >
           2D
         </button>
         <button
-          className={`btn btn-sm ${is3D ? 'btn-primary' : 'btn-outline'}`}
+          className={`btn btn-sm btn-pill ${is3D ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setIs3D(true)}
         >
           3D
         </button>
-        <span className="graph-info">
-          {graphData.nodes.length} nodes, {graphData.links.length} links
+        <button
+          className="btn btn-sm btn-pill btn-outline"
+          onClick={() => setIsFullscreen(f => !f)}
+          title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+        >
+          {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+        </button>
+        <span className="graph-info text-muted text-sm">
+          {graphData.nodes.length} nodes &middot; {graphData.links.length} links
         </span>
         <div className="graph-legend">
           {Object.entries(TYPE_COLORS).map(([type, color]) => (
@@ -175,8 +205,24 @@ export default function GraphViz({ userId }) {
         </div>
       </div>
 
+      {error && <ErrorBanner message={error} onRetry={fetchGraph} />}
+
+      {!loading && !error && graphData.nodes.length === 0 && (
+        <EmptyState
+          message="No graph data yet. Add some conversations to build the knowledge graph."
+          actionLabel="Add Memories"
+          actionTo="/dashboard/chat"
+        />
+      )}
+
       <div className="graph-container" ref={containerRef}>
-        {GraphComponent && (
+        {loading && (
+          <div className="graph-loading-overlay">
+            <div className="spinner" />
+            <span>Loading graph...</span>
+          </div>
+        )}
+        {!loading && GraphComponent && graphData.nodes.length > 0 && (
           <GraphComponent
             ref={graphRef}
             graphData={graphData}
@@ -205,7 +251,7 @@ export default function GraphViz({ userId }) {
           <span className="badge" style={{ background: getColor(hovered.type), color: '#fff' }}>
             {hovered.type}
           </span>
-          <span>Mentions: {hovered.mentionCount}</span>
+          <span className="text-muted text-sm">Mentions: {hovered.mentionCount}</span>
         </div>
       )}
     </div>
