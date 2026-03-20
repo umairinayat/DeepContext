@@ -13,6 +13,8 @@
 
 All colors are defined as CSS custom properties. Zero hardcoded colors in component CSS.
 
+**Migration note:** The current codebase uses `#6366f1` (indigo) as the accent color. This redesign changes it to `#6C5CE7` (blue-violet). All hardcoded color values in existing components (e.g., `GraphViz.jsx` entity type color map, badge classes in CSS) must be replaced with CSS variable references (`var(--accent)`, `var(--green)`, etc.). No component should contain hardcoded hex color values after the redesign.
+
 **Light Mode** (`[data-theme="light"]`):
 
 | Token | Value | Use |
@@ -43,7 +45,7 @@ All colors are defined as CSS custom properties. Zero hardcoded colors in compon
 |-------|-------|-----|
 | `--accent` | `#6C5CE7` | Primary accent (blue-violet) |
 | `--accent-hover` | `#5A4BD6` | Hover state |
-| `--accent-dim` | `#6C5CE7` at 10% opacity | Subtle backgrounds |
+| `--accent-dim` | `rgba(108, 92, 231, 0.1)` | Subtle backgrounds |
 | `--accent-gradient` | `#6C5CE7 -> #4F8CFF` | Brand gradient (hero, CTAs) |
 
 **Semantic colors (shared both modes):**
@@ -57,7 +59,16 @@ All colors are defined as CSS custom properties. Zero hardcoded colors in compon
 | `--purple` | `#A855F7` | Procedural memory |
 | `--pink` | `#EC4899` | Episodic memory |
 
-Each semantic color also gets a `--{color}-dim` variant at 10% opacity for badge/pill backgrounds.
+Each semantic color also gets a `--{color}-dim` variant for badge/pill backgrounds:
+
+| Token | Value |
+|-------|-------|
+| `--green-dim` | `rgba(16, 185, 129, 0.1)` |
+| `--cyan-dim` | `rgba(6, 182, 212, 0.1)` |
+| `--orange-dim` | `rgba(245, 158, 11, 0.1)` |
+| `--rose-dim` | `rgba(244, 63, 94, 0.1)` |
+| `--purple-dim` | `rgba(168, 85, 247, 0.1)` |
+| `--pink-dim` | `rgba(236, 72, 153, 0.1)` |
 
 ### 1.2 Typography
 
@@ -75,7 +86,7 @@ Line heights: headings 1.2, body 1.6, code 1.5.
 ### 1.3 Spacing & Layout
 
 - Full-width sections: backgrounds span `100vw`, content uses `padding: 0 5%` (desktop) / `padding: 0 1.25rem` (mobile)
-- No `max-width` container on page sections — full bleed
+- No `max-width` container on page sections — full bleed. **Breaking change:** The current CSS defines `--max-width: 1200px` and many sections use `.container { max-width: var(--max-width) }`. All references to `--max-width` and `.container` must be removed and replaced with the `padding: 0 5%` approach.
 - Prose text (docs, descriptions) constrained to `720px` for readability
 - Border radius: `12px` cards, `8px` buttons/inputs, `16px` large containers, `9999px` pills
 - Shadows (light mode): `0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.06)`
@@ -89,6 +100,7 @@ Line heights: headings 1.2, body 1.6, code 1.5.
 - Defaults to system preference via `prefers-color-scheme` media query
 - Theme applied via `data-theme` attribute on `<html>` element
 - All colors reference CSS variables — theme switch is instant, no flash
+- **Theme transition:** Apply `transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease` on `body`, cards, and sidebar during theme switch. Do NOT apply a global `* { transition }` — that causes layout thrash. Only transition `background-color`, `color`, and `border-color` on key containers.
 
 ### 1.5 Responsive Breakpoints
 
@@ -105,7 +117,9 @@ Line heights: headings 1.2, body 1.6, code 1.5.
 
 ### 2.1 Navbar
 
-**Desktop (>= 768px):**
+**Note:** The navbar uses a simplified two-tier breakpoint (`>= 768px` desktop, `< 768px` mobile) rather than the three-tier system used by the dashboard. This is intentional — the navbar is simple enough that a tablet-specific variant adds no value.
+
+**Desktop / Tablet (>= 768px):**
 - Full-width sticky bar, `height: 64px`
 - Left: Logo icon + "DeepContext" wordmark (Inter 700)
 - Center: Nav links (Home, Docs, Demo, Dashboard) with subtle underline hover animation
@@ -149,7 +163,18 @@ Small inline elements for tier, type, entity type labels:
 - `border-radius: 9999px`, `padding: 0.2rem 0.6rem`, `font-size: 0.75rem`, `font-weight: 500`
 - Tier badges: working (orange), short_term (cyan), long_term (green)
 - Type badges: semantic (accent), episodic (pink), procedural (purple)
-- Entity badges: person (pink), organization (orange), technology (accent), concept (cyan), location (green), event (purple), preference (orange), other (muted)
+- Entity type color map (definitive, replaces all hardcoded values in `GraphViz.jsx` and CSS):
+
+| Entity Type | Color Token | Hex Value |
+|-------------|-------------|-----------|
+| person | `--pink` | `#EC4899` |
+| organization | `--orange` | `#F59E0B` |
+| technology | `--accent` | `#6C5CE7` |
+| concept | `--cyan` | `#06B6D4` |
+| location | `--green` | `#10B981` |
+| event | `--purple` | `#A855F7` |
+| preference | `--orange` | `#F59E0B` |
+| other | `--text-muted` | (theme-dependent) |
 
 ### 2.5 Card Component
 
@@ -207,6 +232,19 @@ Desktop grid (CSS Grid):
 │  Embedding Storage     │  Multi-   │
 │  (spans 2 cols)        │  User     │
 └────────────────────────┴───────────┘
+
+CSS Grid definition:
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 1.5rem;
+
+  /* Card 1 (Hybrid Retrieval): */ grid-column: 1 / 3; grid-row: 1;
+  /* Card 2 (Knowledge Graph):  */ grid-column: 3 / 4; grid-row: 1;
+  /* Card 3 (Lifecycle Mgmt):   */ grid-column: 1 / 2; grid-row: 2;
+  /* Card 4 (Fact Extraction):  */ grid-column: 2 / 4; grid-row: 2;
+  /* Card 5 (Embedding Storage):*/ grid-column: 1 / 3; grid-row: 3;
+  /* Card 6 (Multi-User):       */ grid-column: 3 / 4; grid-row: 3;
 ```
 
 - 6 feature cards total
@@ -247,6 +285,21 @@ Conversation -> Extraction -> Embedding -> Storage -> Retrieval
 ---
 
 ## 4. Dashboard (`/dashboard`)
+
+### 4.0 Routing Model
+
+The dashboard sidebar sections become **nested routes** under `/dashboard`:
+
+| Route | Component | Sidebar Item |
+|-------|-----------|-------------|
+| `/dashboard` | Redirects to `/dashboard/stats` | — |
+| `/dashboard/stats` | StatsPage | Stats |
+| `/dashboard/chat` | ChatPage | Chat Input |
+| `/dashboard/graph` | GraphPage | Knowledge Graph |
+| `/dashboard/memories` | MemoriesPage | Memories |
+| `/dashboard/lifecycle` | LifecyclePage | Lifecycle |
+
+This enables browser back/forward navigation, deep-linking, and bookmarking. The `Dashboard.jsx` component renders the sidebar + header as a persistent layout shell, with a `<Outlet />` for the active sub-page. React Router's `NavLink` provides the active state for sidebar items.
 
 ### 4.1 Layout — Sidebar Navigation
 
@@ -330,7 +383,7 @@ Replaces the current tabbed layout with a sidebar.
   - Click: detail panel slides in
 - Detail panel:
   - Desktop: slides in from right as a `320px` side panel (overlay, not pushing content)
-  - Mobile: slides up from bottom as a sheet overlay (`80vh` max height, draggable)
+  - Mobile: slides up from bottom as a fixed overlay (`80vh` max height), closeable via X button / backdrop click / Escape
   - Shows: full text, all metadata (tier, type, importance, decay_factor, access_count), timestamps, Edit + Delete buttons
 - Pagination: numbered pills at bottom, accent on active page, prev/next arrows
 
@@ -358,7 +411,12 @@ Replaces the current tabbed layout with a sidebar.
 - Tables: clean with `--border` dividers, no heavy backgrounds
 - Headings: anchor links on hover (# icon)
 
-**Mobile:** Sidebar becomes a collapsible dropdown TOC at the top of the page (tap to expand/collapse). Content full-width with `1.25rem` padding.
+**Mobile:** Sidebar becomes a collapsible dropdown TOC at the top of the page:
+- Trigger: a button showing "Table of Contents" with a chevron icon (down when collapsed, up when expanded)
+- Expanded: shows all section links in a bordered card below the button
+- Auto-closes when a section link is tapped (navigates to that section)
+- Expand/collapse animated with `max-height` transition (`300ms ease`)
+- Content below: full-width with `1.25rem` padding.
 
 ---
 
@@ -416,7 +474,7 @@ Import order matters:
 | `MobileMenu.jsx` | Full-screen overlay menu for navbar on mobile |
 | `CopyButton.jsx` | Small copy-to-clipboard button for code blocks and install pill |
 | `ProgressBar.jsx` | Colored horizontal bar for stats breakdowns |
-| `SlidePanel.jsx` | Right slide-in panel (desktop) / bottom sheet (mobile) for memory detail |
+| `SlidePanel.jsx` | Right slide-in panel (desktop) / bottom sheet (mobile) for memory detail. Desktop: CSS `transform: translateX()` animation. Mobile: simple fixed overlay sliding up from bottom via `transform: translateY()` — NOT drag-to-dismiss (avoids needing a gesture library). Closeable via X button, backdrop click, or Escape key. |
 
 ### Modified Components
 
@@ -437,7 +495,46 @@ None — all existing components are kept but restyled.
 
 ---
 
-## 9. Technical Notes
+## 9. Loading, Error & Empty States
+
+All dashboard pages and data-dependent components must handle three states beyond the happy path:
+
+### Loading State
+- **Skeleton loaders:** Show placeholder shapes matching the expected content layout (gray pulsing rectangles).
+- Cards show skeleton bars for numbers and text.
+- Memory list shows 5 skeleton rows.
+- Graph shows a centered spinner with "Loading graph..." text.
+- Stats cards show skeleton bars where numbers/progress bars will appear.
+- Skeleton uses `--bg-tertiary` background with a subtle shimmer animation (`@keyframes shimmer` — left-to-right gradient sweep).
+
+### Error State
+- **Inline error banner:** Appears at the top of the affected content area (not a modal, not a toast).
+- Style: `--rose-dim` background, `--rose` left border (`4px`), `--rose` text, with a retry button.
+- Shows the error message (e.g., "Failed to connect to backend", "Search failed").
+- Components that previously loaded data keep showing stale data with the error banner above — they do not blank out.
+- Backend status indicator in dashboard header: red dot + "Disconnected" when backend is unreachable.
+
+### Empty State
+- **Centered illustration-free message** with muted text and a CTA:
+  - Stats (no data): "No memories yet. Go to Chat Input to extract your first memories." with a link/button to `/dashboard/chat`.
+  - Memory browser (no results): "No memories match your search." with a "Clear filters" button.
+  - Graph (no entities): "No entities found. Extract some conversations to build your knowledge graph."
+  - Lifecycle (never run): "Lifecycle has not been run yet. Click the button above to start."
+  - Chat results (before extraction): No results section shown — only appears after extraction.
+
+---
+
+## 10. Accessibility
+
+- **`@media (prefers-reduced-motion: reduce)`:** Disables hero gradient mesh animation, card hover `translateY` transitions, and slide panel animations. Transitions become instant.
+- **Focus indicators:** All interactive elements (buttons, links, inputs, sidebar items, tabs) show a visible focus ring (`0 0 0 3px var(--accent-dim)`) on `:focus-visible`.
+- **Slide panel / mobile sheet:** Closeable via X button (top-right corner), click/tap on overlay backdrop, and Escape key. Focus is trapped inside the panel while open (cycle Tab through panel content). On close, focus returns to the element that opened it.
+- **Color contrast:** All text/background combinations meet WCAG AA (4.5:1 for body text, 3:1 for large text). The chosen token values satisfy this.
+- **Sidebar keyboard navigation:** Arrow keys move between items, Enter/Space activates.
+
+---
+
+## 11. Technical Notes
 
 - **No CSS framework added.** Stays pure CSS with custom properties. The design quality comes from tokens, spacing discipline, and consistent components — not a framework.
 - **Theme toggle** uses `useEffect` to check `localStorage` on mount, falls back to `prefers-color-scheme`. Sets `document.documentElement.dataset.theme`.
