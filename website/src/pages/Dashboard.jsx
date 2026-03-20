@@ -1,26 +1,25 @@
 import { useState, useEffect } from 'react'
-import StatsCards from '../components/StatsCards'
-import ChatPanel from '../components/ChatPanel'
-import GraphViz from '../components/GraphViz'
-import MemoryBrowser from '../components/MemoryBrowser'
-import LifecycleControls from '../components/LifecycleControls'
+import { Outlet, useLocation } from 'react-router-dom'
+import Sidebar from '../components/Sidebar'
 import { healthCheck } from '../api/client'
 
-const TABS = [
-  { id: 'stats', label: 'Stats' },
-  { id: 'chat', label: 'Chat Input' },
-  { id: 'graph', label: 'Knowledge Graph' },
-  { id: 'memories', label: 'Memories' },
-  { id: 'lifecycle', label: 'Lifecycle' },
-]
+const PAGE_TITLES = {
+  stats: 'Stats',
+  chat: 'Chat Input',
+  graph: 'Knowledge Graph',
+  memories: 'Memories',
+  lifecycle: 'Lifecycle',
+}
 
 export default function Dashboard() {
   const [userId, setUserId] = useState('default_user')
-  const [activeTab, setActiveTab] = useState('stats')
   const [backendStatus, setBackendStatus] = useState('checking')
   const [refreshKey, setRefreshKey] = useState(0)
+  const location = useLocation()
 
-  // Check backend connectivity
+  const currentSection = location.pathname.split('/').pop() || 'stats'
+  const pageTitle = PAGE_TITLES[currentSection] || 'Dashboard'
+
   useEffect(() => {
     healthCheck()
       .then(() => setBackendStatus('connected'))
@@ -32,59 +31,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
-      {/* Dashboard Header */}
-      <div className="dashboard-header">
-        <div className="dashboard-header-left">
-          <h1>Dashboard</h1>
-          <div className={`backend-status status-${backendStatus}`}>
-            <span className="status-dot" />
-            {backendStatus === 'connected' ? 'Backend Connected' :
-             backendStatus === 'disconnected' ? 'Backend Offline' : 'Checking...'}
-          </div>
-        </div>
-        <div className="dashboard-header-right">
-          <div className="user-id-input">
-            <label>User ID:</label>
+    <div className="dashboard-layout">
+      <Sidebar />
+      <div className="dashboard-main">
+        <div className="dashboard-header">
+          <h2 className="dashboard-title">{pageTitle}</h2>
+          <div className="dashboard-header-right">
+            <div className={`backend-status status-${backendStatus}`}>
+              <span className="status-dot" />
+              {backendStatus === 'connected' ? 'Connected' :
+               backendStatus === 'disconnected' ? 'Disconnected' : 'Checking...'}
+            </div>
             <input
               type="text"
               value={userId}
               onChange={e => setUserId(e.target.value)}
-              placeholder="Enter user ID"
+              placeholder="User ID"
+              className="user-id-input"
             />
+            <button className="btn btn-icon btn-ghost" onClick={handleRefresh} title="Refresh">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+            </button>
           </div>
-          <button className="btn btn-outline btn-sm" onClick={handleRefresh}>
-            Refresh
-          </button>
         </div>
-      </div>
 
-      {backendStatus === 'disconnected' && (
-        <div className="dashboard-warning">
-          Backend is not running. Start it with: <code>uvicorn deepcontext.api.server:app --reload</code>
+        {backendStatus === 'disconnected' && (
+          <div className="error-banner" style={{ margin: '1rem 1.5rem 0' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span>Backend offline. Start it: <code>uvicorn deepcontext.api.server:app --reload</code></span>
+          </div>
+        )}
+
+        <div className="dashboard-content" key={refreshKey}>
+          <Outlet context={{ userId, refreshKey, backendStatus }} />
         </div>
-      )}
-
-      {/* Tab Navigation */}
-      <div className="dashboard-tabs">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      <div className="dashboard-content" key={refreshKey}>
-        {activeTab === 'stats' && <StatsCards userId={userId} />}
-        {activeTab === 'chat' && <ChatPanel userId={userId} />}
-        {activeTab === 'graph' && <GraphViz userId={userId} />}
-        {activeTab === 'memories' && <MemoryBrowser userId={userId} />}
-        {activeTab === 'lifecycle' && <LifecycleControls userId={userId} />}
       </div>
     </div>
   )
