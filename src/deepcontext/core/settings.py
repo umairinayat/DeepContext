@@ -95,24 +95,16 @@ class DeepContextSettings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_api_keys(self) -> "DeepContextSettings":
-        """Ensure at least one API key is configured."""
+        """Ensure at least one API key is configured (soft validation)."""
         if self.llm_provider == LLMProvider.OPENROUTER:
             if not self.openrouter_api_key:
                 # Try bare env var as fallback
                 self.openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
-                if not self.openrouter_api_key:
-                    raise ValueError(
-                        "openrouter_api_key is required when llm_provider='openrouter'. "
-                        "Set DEEPCONTEXT_OPENROUTER_API_KEY or OPENROUTER_API_KEY."
-                    )
+                # Don't raise -- users provide their own keys at runtime
         else:
             if not self.openai_api_key:
                 self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-                if not self.openai_api_key:
-                    raise ValueError(
-                        "openai_api_key is required. "
-                        "Set DEEPCONTEXT_OPENAI_API_KEY or OPENAI_API_KEY."
-                    )
+                # Don't raise -- users provide their own keys at runtime
         return self
 
     @model_validator(mode="after")

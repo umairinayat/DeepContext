@@ -1,64 +1,162 @@
 /**
  * API client for DeepContext backend.
- * Connects to FastAPI server at configurable base URL.
+ * Connects to FastAPI server with JWT authentication.
  */
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-async function request(path, body) {
-  const resp = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+/**
+ * Get the stored JWT token.
+ */
+function getToken() {
+  return localStorage.getItem('dc_token')
+}
+
+/**
+ * Make an authenticated request.
+ */
+async function request(path, { method = 'POST', body = null, auth = true } = {}) {
+  const headers = { 'Content-Type': 'application/json' }
+
+  if (auth) {
+    const token = getToken()
+    if (!token) {
+      throw new Error('Not authenticated')
+    }
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const opts = { method, headers }
+  if (body !== null) {
+    opts.body = JSON.stringify(body)
+  }
+
+  const resp = await fetch(`${API_BASE}${path}`, opts)
+
+  if (resp.status === 401) {
+    // Token expired or invalid -- clear auth state
+    localStorage.removeItem('dc_token')
+    localStorage.removeItem('dc_user')
+    window.dispatchEvent(new Event('dc_logout'))
+    throw new Error('Session expired. Please log in again.')
+  }
+
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ detail: resp.statusText }))
     throw new Error(err.detail || `HTTP ${resp.status}`)
   }
+
   return resp.json()
 }
 
+function normalizeOptions(maybeUserIdOrOptions, maybeOptions = {}) {
+  if (typeof maybeUserIdOrOptions === 'string') {
+    return maybeOptions
+  }
+  return maybeUserIdOrOptions ?? {}
+}
+
+// ===========================================================================
+// AUTH
+// ===========================================================================
+
+/** Register a new account. */
+export async function register(username, password, email = null) {
+  const body = { username, password }
+  if (email) body.email = email
+  return request('/auth/register', { body, auth: false })
+}
+
+/** Login and get JWT token. */
+export async function login(username, password) {
+  return request('/auth/login', { body: { username, password }, auth: false })
+}
+
+/** Get current user profile. */
+export async function getProfile() {
+  return request('/auth/me', { method: 'GET' })
+}
+
+/** Save OpenRouter API key. */
+export async function setApiKey(apiKey) {
+  return request('/auth/apikey', { body: { api_key: apiKey } })
+}
+
+/** Remove stored API key. */
+export async function deleteApiKey() {
+  return request('/auth/apikey', { method: 'DELETE' })
+}
+
+// ===========================================================================
+// MEMORY
+// ===========================================================================
+
 /** Extract & store memories from conversation messages. */
-export async function addMemory(messages, userId, conversationId = 'default') {
-  return request('/memory/add', { messages, user_id: userId, conversation_id: conversationId })
+export async function addMemory(messages, userIdOrConversationId = 'default', maybeConversationId) {
+  const conversationId = maybeConversationId ?? userIdOrConversationId ?? 'default'
+  return request('/memory/add', { body: { messages, conversation_id: conversationId } })
 }
 
 /** Hybrid search for memories. */
-export async function searchMemory(query, userId, options = {}) {
-  return request('/memory/search', { query, user_id: userId, ...options })
+export async function searchMemory(query, userIdOrOptions = {}, maybeOptions = {}) {
+  const options = normalizeOptions(userIdOrOptions, maybeOptions)
+  return request('/memory/search', { body: { query, ...options } })
 }
 
 /** List all memories with optional filtering & pagination. */
-export async function listMemories(userId, options = {}) {
-  return request('/memory/list', { user_id: userId, ...options })
+export async function listMemories(userIdOrOptions = {}, maybeOptions = {}) {
+  const options = normalizeOptions(userIdOrOptions, maybeOptions)
+  return request('/memory/list', { body: options })
 }
 
-/** Get complete knowledge graph (nodes + links) for a user. */
-export async function getFullGraph(userId) {
-  return request('/graph/full', { user_id: userId })
+/** Update a memory. */
+export async function updateMemory(memoryId, text) {
+  return request('/memory/update', { method: 'PUT', body: { memory_id: memoryId, text } })
+}
+
+/** Delete a memory. */
+export async function deleteMemory(memoryId) {
+  return request('/memory/delete', { method: 'DELETE', body: { memory_id: memoryId } })
+}
+
+// ===========================================================================
+// GRAPH
+// ===========================================================================
+
+/** Get complete knowledge graph (nodes + links). */
+export async function getFullGraph() {
+  return request('/graph/full', { body: {} })
 }
 
 /** Get graph neighbors for an entity (BFS traversal). */
-export async function getNeighbors(userId, entityName, depth = 2) {
-  return request('/graph/neighbors', { user_id: userId, entity_name: entityName, depth })
+export async function getNeighbors(userIdOrEntityName, entityNameOrDepth = 2, maybeDepth = 2) {
+  const entityName = typeof entityNameOrDepth === 'string'
+    ? entityNameOrDepth
+    : userIdOrEntityName
+  const depth = typeof entityNameOrDepth === 'string' ? maybeDepth : entityNameOrDepth
+  return request('/graph/neighbors', { body: { entity_name: entityName, depth } })
 }
 
-/** List all entities for a user. */
-export async function listEntities(userId) {
-  return request('/graph/entities', { user_id: userId })
+/** List all entities. */
+export async function listEntities() {
+  return request('/graph/entities', { body: {} })
 }
 
-/** Get summary statistics for a user. */
-export async function getStats(userId) {
-  return request('/stats', { user_id: userId })
+// ===========================================================================
+// STATS & LIFECYCLE
+// ===========================================================================
+
+/** Get summary statistics. */
+export async function getStats() {
+  return request('/stats', { body: {} })
 }
 
 /** Run lifecycle maintenance (decay + consolidation + cleanup). */
-export async function runLifecycle(userId) {
-  return request('/lifecycle/run', { user_id: userId })
+export async function runLifecycle() {
+  return request('/lifecycle/run', { body: {} })
 }
 
-/** Health check. */
+/** Health check (unauthenticated). */
 export async function healthCheck() {
   const resp = await fetch(`${API_BASE}/health`)
   return resp.json()

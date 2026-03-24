@@ -367,3 +367,34 @@ alembic upgrade head
 # Check Alembic status
 alembic current
 ```
+
+---
+
+## gstack
+
+This project uses [gstack](https://github.com/garrytan/gstack.git) for browser automation, QA testing, code review, and shipping workflows.
+
+**Important:** Always use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools.
+
+### Available Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/browse` | Headless browser for QA testing, site dogfooding, and web interaction |
+| `/qa` | Systematic QA testing with diff-aware, full, quick, and regression modes |
+| `/plan-ceo-review` | CEO/founder-mode plan review -- rethink the problem, challenge premises |
+| `/plan-eng-review` | Eng manager-mode plan review -- architecture, data flow, edge cases |
+| `/review` | Pre-landing PR review for SQL safety, trust boundaries, structural issues |
+| `/ship` | Ship workflow: merge main, run tests, review diff, bump version, push, create PR |
+| `/setup-browser-cookies` | Import cookies from your real browser into headless browse sessions |
+| `/retro` | Weekly engineering retrospective with commit history and quality metrics |
+
+### Troubleshooting
+
+If gstack skills aren't working (e.g. browse binary not found, skills not registered), rebuild by running:
+
+```bash
+cd .claude/skills/gstack && ./setup
+```
+
+This builds the browse binary and regenerates skill docs.

@@ -1,9 +1,12 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 import ThemeToggle from './ThemeToggle'
 import MobileMenu from './MobileMenu'
 
 export default function Navbar() {
+  const { isAuthenticated, user, logout } = useAuth()
+  const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -14,6 +17,11 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
 
   return (
     <>
@@ -30,11 +38,29 @@ export default function Navbar() {
 
           <div className="navbar-center">
             <NavLink to="/docs" className={({ isActive }) => isActive ? 'active' : ''}>Docs</NavLink>
+            <NavLink to="/demo" className={({ isActive }) => isActive ? 'active' : ''}>Demo</NavLink>
             <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>Dashboard</NavLink>
+            {isAuthenticated && (
+              <NavLink to="/dashboard/settings" className={({ isActive }) => isActive ? 'active' : ''}>Settings</NavLink>
+            )}
             <a href="https://github.com/umairinayat/DeepContext" target="_blank" rel="noreferrer">GitHub</a>
           </div>
 
           <div className="navbar-right">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm btn-pill"
+                onClick={handleLogout}
+                title={user?.username ? `Signed in as ${user.username}` : 'Sign out'}
+              >
+                Logout
+              </button>
+            ) : (
+              <NavLink to="/login" className="btn btn-primary btn-sm btn-pill">
+                Sign In
+              </NavLink>
+            )}
             <ThemeToggle />
             <button
               className="navbar-hamburger"
