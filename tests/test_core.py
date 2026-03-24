@@ -104,9 +104,7 @@ class TestExtractionResult:
             semantic=[ExtractedFact(text="fact1")],
             episodic=[ExtractedFact(text="event1", memory_type=MemoryType.EPISODIC)],
             entities=[ExtractedEntity(name="Python", entity_type=EntityType.TECHNOLOGY)],
-            relationships=[
-                ExtractedRelationship(source="User", target="Python", relation="uses")
-            ],
+            relationships=[ExtractedRelationship(source="User", target="Python", relation="uses")],
         )
         assert len(result.semantic) == 1
         assert len(result.entities) == 1
@@ -197,19 +195,26 @@ class TestSettings:
         s = DeepContextSettings(openai_api_key="sk-test-key")
         assert s.embedding_api_key == "sk-test-key"
 
-    def test_missing_api_key_raises(self):
-        """Should raise if no API key is provided."""
+    def test_missing_api_key_soft_validation(self):
+        """Settings should NOT raise when no API key is provided (soft validation).
+
+        Users provide their own API keys at runtime via the auth system,
+        so the server starts without requiring a key at init time.
+        """
         # Clear env vars AND prevent pydantic-settings from reading .env file
         clean_env = {
-            k: v for k, v in os.environ.items()
+            k: v
+            for k, v in os.environ.items()
             if "OPENAI" not in k and "OPENROUTER" not in k and "DEEPCONTEXT" not in k
         }
         with unittest.mock.patch.dict(os.environ, clean_env, clear=True):
-            with pytest.raises(ValueError, match="openai_api_key is required"):
-                DeepContextSettings(
-                    database_url="sqlite+aiosqlite:///:memory:",
-                    _env_file=None,  # prevent reading .env file
-                )
+            s = DeepContextSettings(
+                database_url="sqlite+aiosqlite:///:memory:",
+                _env_file=None,  # prevent reading .env file
+            )
+            # API keys should be None/empty, not raise
+            assert s.openai_api_key is None
+            assert s.llm_api_key == ""
 
     def test_custom_models(self):
         s = DeepContextSettings(

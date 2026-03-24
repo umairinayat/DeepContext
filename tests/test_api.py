@@ -1,5 +1,10 @@
 """
 Tests for the FastAPI REST API server.
+
+All protected endpoints require JWT auth. In tests we override the
+`get_current_user` dependency to return a fake AuthenticatedUser, and
+patch `_get_user_api_key` so endpoints that need an LLM API key don't
+hit the database.
 """
 
 from __future__ import annotations
@@ -11,6 +16,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
+from deepcontext.api.auth import AuthenticatedUser, get_current_user
 from deepcontext.api.server import app, get_engine
 from deepcontext.core.types import (
     AddResponse,
@@ -19,6 +25,22 @@ from deepcontext.core.types import (
     MemoryType,
     SearchResponse,
 )
+
+
+# ---------------------------------------------------------------------------
+# Fake authenticated user for dependency override
+# ---------------------------------------------------------------------------
+
+_FAKE_USER = AuthenticatedUser(
+    user_id=1,
+    username="testuser",
+    deep_context_user_id="user_1",
+)
+
+
+async def _fake_get_current_user() -> AuthenticatedUser:
+    """Dependency override that bypasses JWT verification."""
+    return _FAKE_USER
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +54,8 @@ async def mock_engine():
     engine = MagicMock()
     engine.init = AsyncMock()
     engine.close = AsyncMock()
+    engine.set_user_api_key = MagicMock()
+    engine.clear_user_api_key = MagicMock()
     engine.add = AsyncMock(
         return_value=AddResponse(
             semantic_facts=["User likes Python"],
@@ -42,7 +66,7 @@ async def mock_engine():
     engine.search = AsyncMock(
         return_value=SearchResponse(
             query="test",
-            user_id="u1",
+            user_id="user_1",
             total=1,
             results=[
                 MemorySearchResult(
@@ -171,16 +195,25 @@ async def mock_engine():
 
 @pytest_asyncio.fixture
 async def client(mock_engine):
-    """Create an httpx AsyncClient with the mock engine injected."""
+    """Create an httpx AsyncClient with the mock engine and auth override."""
     import deepcontext.api.server as server_module
 
     original_engine = server_module._engine
     server_module._engine = mock_engine
 
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+    # Override auth dependency so all endpoints see a fake authenticated user
+    app.dependency_overrides[get_current_user] = _fake_get_current_user
 
+    # Patch _get_user_api_key to return a fake API key (for LLM-dependent endpoints)
+    with patch.object(
+        server_module, "_get_user_api_key", new=AsyncMock(return_value="sk-fake-test-key")
+    ):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as c:
+            yield c
+
+    # Cleanup
+    app.dependency_overrides.pop(get_current_user, None)
     server_module._engine = original_engine
 
 
@@ -206,7 +239,6 @@ class TestAddEndpoint:
             "/memory/add",
             json={
                 "messages": [{"role": "user", "content": "I like Python"}],
-                "user_id": "u1",
                 "conversation_id": "c1",
             },
         )
@@ -216,15 +248,16 @@ class TestAddEndpoint:
         assert "Python" in data["entities_found"]
 
     @pytest.mark.asyncio
-    async def test_add_missing_fields(self, client):
+    async def test_add_missing_messages(self, client):
+        """Missing messages field -> 422."""
         resp = await client.post(
             "/memory/add",
             json={
-                "messages": [{"role": "user", "content": "hi"}],
-                # missing user_id
+                "conversation_id": "c1",
+                # missing 'messages'
             },
         )
-        assert resp.status_code == 422  # Validation error
+        assert resp.status_code == 422
 
 
 class TestSearchEndpoint:
@@ -234,7 +267,6 @@ class TestSearchEndpoint:
             "/memory/search",
             json={
                 "query": "Python",
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 200
@@ -248,7 +280,6 @@ class TestSearchEndpoint:
             "/memory/search",
             json={
                 "query": "Python",
-                "user_id": "u1",
                 "limit": 5,
                 "tier": "short_term",
                 "memory_type": "semantic",
@@ -266,7 +297,6 @@ class TestUpdateEndpoint:
             json={
                 "memory_id": 1,
                 "text": "User loves Python",
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 200
@@ -280,7 +310,6 @@ class TestUpdateEndpoint:
             json={
                 "memory_id": 999,
                 "text": "nope",
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 404
@@ -294,7 +323,6 @@ class TestDeleteEndpoint:
             "/memory/delete",
             json={
                 "memory_id": 1,
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 200
@@ -307,7 +335,6 @@ class TestGraphEndpoint:
         resp = await client.post(
             "/graph/neighbors",
             json={
-                "user_id": "u1",
                 "entity_name": "Python",
                 "depth": 2,
             },
@@ -321,12 +348,7 @@ class TestGraphEndpoint:
 class TestLifecycleEndpoint:
     @pytest.mark.asyncio
     async def test_lifecycle(self, client, mock_engine):
-        resp = await client.post(
-            "/lifecycle/run",
-            json={
-                "user_id": "u1",
-            },
-        )
+        resp = await client.post("/lifecycle/run")
         assert resp.status_code == 200
         data = resp.json()
         assert data["memories_decayed"] == 2
@@ -358,43 +380,28 @@ class TestAPIHardening:
             "/memory/add",
             json={
                 "messages": [],
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
     async def test_search_missing_query(self, client):
-        """Missing query field → 422."""
+        """Missing query field -> 422."""
         resp = await client.post(
             "/memory/search",
             json={
-                "user_id": "u1",
                 # missing 'query'
             },
         )
         assert resp.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_search_missing_user_id(self, client):
-        """Missing user_id → 422."""
-        resp = await client.post(
-            "/memory/search",
-            json={
-                "query": "test",
-                # missing 'user_id'
-            },
-        )
-        assert resp.status_code == 422
-
-    @pytest.mark.asyncio
     async def test_update_missing_text(self, client):
-        """Missing text field → 422."""
+        """Missing text field -> 422."""
         resp = await client.put(
             "/memory/update",
             json={
                 "memory_id": 1,
-                "user_id": "u1",
                 # missing 'text'
             },
         )
@@ -402,14 +409,15 @@ class TestAPIHardening:
 
     @pytest.mark.asyncio
     async def test_delete_not_found_returns_404(self, client, mock_engine):
-        """delete() raising ValueError → 404."""
-        mock_engine.delete = AsyncMock(side_effect=ValueError("Memory 999 not found for user u1"))
+        """delete() raising ValueError -> 404."""
+        mock_engine.delete = AsyncMock(
+            side_effect=ValueError("Memory 999 not found for user user_1")
+        )
         resp = await client.request(
             "DELETE",
             "/memory/delete",
             json={
                 "memory_id": 999,
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 404
@@ -417,13 +425,12 @@ class TestAPIHardening:
 
     @pytest.mark.asyncio
     async def test_add_engine_internal_error(self, client, mock_engine):
-        """Engine raising an unexpected exception → 500."""
+        """Engine raising an unexpected exception -> 500."""
         mock_engine.add = AsyncMock(side_effect=RuntimeError("Database connection lost"))
         resp = await client.post(
             "/memory/add",
             json={
                 "messages": [{"role": "user", "content": "test"}],
-                "user_id": "u1",
             },
         )
         assert resp.status_code == 500
@@ -436,7 +443,6 @@ class TestAPIHardening:
         resp = await client.post(
             "/graph/neighbors",
             json={
-                "user_id": "u1",
                 "entity_name": "",
                 "depth": 1,
             },
@@ -446,7 +452,7 @@ class TestAPIHardening:
 
     @pytest.mark.asyncio
     async def test_lifecycle_nonexistent_user(self, client, mock_engine):
-        """Lifecycle for non-existent user should return zeros."""
+        """Lifecycle for user with zero results should return zeros."""
         mock_engine.run_lifecycle = AsyncMock(
             return_value={
                 "memories_decayed": 0,
@@ -454,12 +460,7 @@ class TestAPIHardening:
                 "memories_cleaned": 0,
             }
         )
-        resp = await client.post(
-            "/lifecycle/run",
-            json={
-                "user_id": "nonexistent_user_xyz",
-            },
-        )
+        resp = await client.post("/lifecycle/run")
         assert resp.status_code == 200
         data = resp.json()
         assert data["memories_decayed"] == 0
@@ -482,9 +483,7 @@ class TestMemoryListEndpoint:
     async def test_list_memories(self, client, mock_engine):
         resp = await client.post(
             "/memory/list",
-            json={
-                "user_id": "u1",
-            },
+            json={},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -497,7 +496,6 @@ class TestMemoryListEndpoint:
         resp = await client.post(
             "/memory/list",
             json={
-                "user_id": "u1",
                 "tier": "short_term",
                 "memory_type": "semantic",
                 "limit": 10,
@@ -506,21 +504,11 @@ class TestMemoryListEndpoint:
         )
         assert resp.status_code == 200
 
-    @pytest.mark.asyncio
-    async def test_list_memories_missing_user_id(self, client):
-        resp = await client.post("/memory/list", json={})
-        assert resp.status_code == 422
-
 
 class TestFullGraphEndpoint:
     @pytest.mark.asyncio
     async def test_full_graph(self, client, mock_engine):
-        resp = await client.post(
-            "/graph/full",
-            json={
-                "user_id": "u1",
-            },
-        )
+        resp = await client.post("/graph/full")
         assert resp.status_code == 200
         data = resp.json()
         assert "nodes" in data
@@ -533,12 +521,7 @@ class TestFullGraphEndpoint:
     @pytest.mark.asyncio
     async def test_full_graph_empty(self, client, mock_engine):
         mock_engine.get_full_graph = AsyncMock(return_value={"nodes": [], "links": []})
-        resp = await client.post(
-            "/graph/full",
-            json={
-                "user_id": "nobody",
-            },
-        )
+        resp = await client.post("/graph/full")
         assert resp.status_code == 200
         data = resp.json()
         assert data["nodes"] == []
@@ -548,12 +531,7 @@ class TestFullGraphEndpoint:
 class TestEntitiesEndpoint:
     @pytest.mark.asyncio
     async def test_list_entities(self, client, mock_engine):
-        resp = await client.post(
-            "/graph/entities",
-            json={
-                "user_id": "u1",
-            },
-        )
+        resp = await client.post("/graph/entities")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
@@ -563,12 +541,7 @@ class TestEntitiesEndpoint:
     @pytest.mark.asyncio
     async def test_list_entities_empty(self, client, mock_engine):
         mock_engine.list_entities = AsyncMock(return_value=[])
-        resp = await client.post(
-            "/graph/entities",
-            json={
-                "user_id": "nobody",
-            },
-        )
+        resp = await client.post("/graph/entities")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -576,12 +549,7 @@ class TestEntitiesEndpoint:
 class TestStatsEndpoint:
     @pytest.mark.asyncio
     async def test_stats(self, client, mock_engine):
-        resp = await client.post(
-            "/stats",
-            json={
-                "user_id": "u1",
-            },
-        )
+        resp = await client.post("/stats")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total_memories"] == 10
@@ -601,12 +569,7 @@ class TestStatsEndpoint:
                 "total_relationships": 0,
             }
         )
-        resp = await client.post(
-            "/stats",
-            json={
-                "user_id": "nobody",
-            },
-        )
+        resp = await client.post("/stats")
         assert resp.status_code == 200
         data = resp.json()
         assert data["total_memories"] == 0

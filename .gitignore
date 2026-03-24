@@ -46,3 +46,5 @@ alembic/versions/*.pyc
 
 .test/
 .gstack/
+.claude/
+everything-claude-code/

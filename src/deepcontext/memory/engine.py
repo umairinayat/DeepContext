@@ -571,6 +571,78 @@ class MemoryEngine:
     # CLEANUP
     # -----------------------------------------------------------------------
 
+    # -----------------------------------------------------------------------
+    # PER-REQUEST API KEY OVERRIDE
+    # -----------------------------------------------------------------------
+
+    def set_user_api_key(self, api_key: str) -> None:
+        """
+        Temporarily override the LLM/embedding API key for the current request.
+
+        This replaces the engine's LLM clients with new ones using the given
+        OpenRouter API key. Call clear_user_api_key() when done.
+        """
+        if not self._initialized:
+            return
+
+        from deepcontext.core.settings import LLMProvider
+
+        # Create a new settings object with the user's API key
+        override_settings = DeepContextSettings(
+            database_url=self._settings.database_url,
+            llm_provider=LLMProvider.OPENROUTER,
+            openrouter_api_key=api_key,
+            llm_model=self._settings.llm_model,
+            embedding_model=self._settings.embedding_model,
+            embedding_dimensions=self._settings.embedding_dimensions,
+            debug=self._settings.debug,
+            _env_file=None,
+        )
+
+        # Swap in new clients
+        self._original_clients = self._clients
+        self._original_settings = self._settings
+        self._clients = LLMClients(override_settings)
+        self._settings = override_settings
+
+        # Update subsystems that hold references to clients/settings
+        if self._extractor:
+            self._extractor._clients = self._clients
+            self._extractor._settings = self._settings
+        if self._retriever:
+            self._retriever._clients = self._clients
+            self._retriever._settings = self._settings
+        if self._lifecycle:
+            self._lifecycle._clients = self._clients
+            self._lifecycle._settings = self._settings
+
+    def clear_user_api_key(self) -> None:
+        """Restore the original server-level API key after a per-request override."""
+        original_clients = getattr(self, "_original_clients", None)
+        original_settings = getattr(self, "_original_settings", None)
+
+        if original_clients and original_settings:
+            self._clients = original_clients
+            self._settings = original_settings
+
+            # Restore subsystem references
+            if self._extractor:
+                self._extractor._clients = self._clients
+                self._extractor._settings = self._settings
+            if self._retriever:
+                self._retriever._clients = self._clients
+                self._retriever._settings = self._settings
+            if self._lifecycle:
+                self._lifecycle._clients = self._clients
+                self._lifecycle._settings = self._settings
+
+            self._original_clients = None
+            self._original_settings = None
+
+    # -----------------------------------------------------------------------
+    # CLEANUP
+    # -----------------------------------------------------------------------
+
     async def close(self) -> None:
         """Close all connections and clients."""
         if self._clients:
