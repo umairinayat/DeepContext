@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DeepContext Dashboard | Sovereign Engine</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error-container": "#93000a",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#2f3035",
+                        "surface-container-high": "#292a2e",
+                        "surface": "#121317",
+                        "surface-bright": "#38393e",
+                        "background": "#121317",
+                        "secondary-container": "#007774",
+                        "surface-container-low": "#1a1b20",
+                        "primary-fixed": "#62f9ee",
+                        "surface-dim": "#121317",
+                        "on-tertiary": "#393000",
+                        "on-surface": "#e3e2e8",
+                        "surface-container": "#1f1f24",
+                        "on-secondary-container": "#a1fcf7",
+                        "on-primary-container": "#00716b",
+                        "inverse-surface": "#e3e2e8",
+                        "secondary-fixed": "#98f2ed",
+                        "surface-tint": "#3cdcd1",
+                        "surface-container-lowest": "#0d0e12",
+                        "tertiary": "#ffffff",
+                        "error": "#ffb4ab",
+                        "secondary": "#7bd6d1",
+                        "primary-container": "#62f9ee",
+                        "on-secondary-fixed": "#00201f",
+                        "outline-variant": "#3c4948",
+                        "secondary-fixed-dim": "#7bd6d1",
+                        "on-error-container": "#ffdad6",
+                        "inverse-primary": "#006a64",
+                        "on-secondary": "#003735",
+                        "primary-fixed-dim": "#3cdcd1",
+                        "on-tertiary-fixed-variant": "#524700",
+                        "primary": "#ffffff",
+                        "tertiary-fixed-dim": "#dec74a",
+                        "tertiary-container": "#fce363",
+                        "on-primary-fixed-variant": "#00504b",
+                        "on-tertiary-fixed": "#211b00",
+                        "on-primary": "#003734",
+                        "outline": "#859491",
+                        "on-surface-variant": "#bacac7",
+                        "on-secondary-fixed-variant": "#00504d",
+                        "on-background": "#e3e2e8",
+                        "on-tertiary-container": "#736400",
+                        "on-primary-fixed": "#00201e",
+                        "tertiary-fixed": "#fce363",
+                        "surface-variant": "#343439",
+                        "surface-container-highest": "#343439"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["JetBrains Mono"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pro-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .pro-scroll::-webkit-scrollbar-track {
+            background: #121317;
+        }
+        .pro-scroll::-webkit-scrollbar-thumb {
+            background: #292a2e;
+        }
+        .glass-panel {
+            background: rgba(31, 31, 36, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="bg-[#121317] dark:bg-[#121317] docked full-width top-0 z-50 fixed left-0 right-0 border-b border-outline-variant/15">
+<div class="flex justify-between items-center w-full px-6 py-4 mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold text-white tracking-tighter font-['Space_Grotesk']">DeepContext</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-slate-400 font-medium hover:text-white transition-colors" href="#">Docs</a>
+<a class="text-[#66fcf1] font-bold border-b-2 border-[#66fcf1] pb-1" href="#">Dashboard</a>
+<a class="text-slate-400 font-medium hover:text-white transition-colors" href="#">GitHub</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="bg-surface-container-low border-none text-sm px-10 py-2 rounded focus:ring-1 focus:ring-primary-fixed-dim w-64 placeholder:text-slate-600" placeholder="Command + K" type="text"/>
+</div>
+<button class="p-2 hover:bg-[#1f1f24] transition-all duration-200 text-[#66fcf1]">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-40 bg-[#1a1b20] dark:bg-[#1a1b20] pt-20">
+<div class="flex flex-col h-full py-6">
+<div class="px-6 mb-8">
+<h2 class="font-['Space_Grotesk'] font-bold text-white text-lg">DeepContext</h2>
+<p class="text-slate-500 text-[10px] uppercase tracking-widest font-label">Sovereign Engine</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-[#1f1f24] hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span>Stats</span>
+</a>
+<a class="bg-[#1f1f24] text-[#66fcf1] border-l-4 border-[#66fcf1] px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="shutter_speed">shutter_speed</span>
+<span>Chat/Extract</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-[#1f1f24] hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span>Knowledge Graph</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-[#1f1f24] hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span>Memories</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-[#1f1f24] hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="cyclone">cyclone</span>
+<span>Lifecycle</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-[#1f1f24] hover:text-white transition-all mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="px-4 mt-6">
+<button class="w-full bg-primary text-on-primary py-3 rounded font-bold text-sm transition-all duration-200 active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Extraction
+                </button>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 pt-24 pb-12 px-8 min-h-screen">
+<!-- Stats Section (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+<div class="bg-surface-container p-6 rounded relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 font-label text-[10px] uppercase tracking-widest">Total Memories</span>
+<span class="text-secondary text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+                        +12%
+                    </span>
+</div>
+<h3 class="text-3xl font-headline font-bold text-white">42,891</h3>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-secondary to-transparent opacity-30"></div>
+</div>
+<div class="bg-surface-container p-6 rounded relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 font-label text-[10px] uppercase tracking-widest">Knowledge Graph Nodes</span>
+<span class="text-secondary text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+                        +5.2k
+                    </span>
+</div>
+<h3 class="text-3xl font-headline font-bold text-white">128,004</h3>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-fixed-dim to-transparent opacity-30"></div>
+</div>
+<div class="bg-surface-container p-6 rounded relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 font-label text-[10px] uppercase tracking-widest">Graph Edges</span>
+<span class="text-secondary text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+                        +18%
+                    </span>
+</div>
+<h3 class="text-3xl font-headline font-bold text-white">892,110</h3>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-secondary-container to-transparent opacity-30"></div>
+</div>
+<div class="bg-surface-container p-6 rounded relative overflow-hidden group">
+<div class="flex justify-between items-start mb-4">
+<span class="text-slate-500 font-label text-[10px] uppercase tracking-widest">Token Usage</span>
+<span class="text-on-surface-variant text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">analytics</span>
+                        Stable
+                    </span>
+</div>
+<h3 class="text-3xl font-headline font-bold text-white">1.2M</h3>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-outline-variant to-transparent opacity-30"></div>
+</div>
+</section>
+<!-- Chat/Extract Section Split View -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-320px)]">
+<!-- Left: Chat Input Area -->
+<div class="bg-surface-container rounded-lg flex flex-col overflow-hidden border border-outline-variant/10 shadow-xl">
+<div class="px-6 py-4 bg-surface-container-high flex justify-between items-center">
+<h2 class="font-headline font-bold text-white text-sm tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed-dim">chat_bubble</span>
+                        Input Stream
+                    </h2>
+<div class="flex gap-2">
+<span class="bg-surface-container-lowest text-slate-500 px-2 py-1 text-[10px] font-label rounded">UTF-8</span>
+<span class="bg-surface-container-lowest text-slate-500 px-2 py-1 text-[10px] font-label rounded">PROMPT: ACTIVE</span>
+</div>
+</div>
+<div class="flex-1 p-6 flex flex-col">
+<textarea class="flex-1 bg-surface-container-lowest text-on-surface font-body p-4 rounded border-none focus:ring-1 focus:ring-primary-fixed-dim resize-none pro-scroll placeholder:text-slate-700" placeholder="Paste conversation logs or raw text data here for extraction..."></textarea>
+<div class="mt-4 flex justify-between items-center">
+<p class="text-[10px] text-slate-500 font-label tracking-tighter uppercase">Shift + Enter to submit for extraction</p>
+<button class="bg-white text-on-primary px-6 py-2 rounded font-bold text-sm hover:bg-primary-fixed-dim transition-colors flex items-center gap-2 group">
+                            Extract Entities
+                            <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">bolt</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right: Extraction Log -->
+<div class="bg-surface-container rounded-lg flex flex-col overflow-hidden border border-outline-variant/10 shadow-xl">
+<div class="px-6 py-4 bg-surface-container-high flex justify-between items-center">
+<h2 class="font-headline font-bold text-white text-sm tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">memory</span>
+                        Real-time Extraction Log
+                    </h2>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="text-[10px] text-secondary font-label uppercase tracking-widest">Engine Live</span>
+</div>
+</div>
+<div class="flex-1 p-6 overflow-y-auto pro-scroll space-y-3">
+<div class="bg-surface-container-low border-l-2 border-secondary p-3 flex items-start gap-4 transition-all hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-secondary mt-1">check_circle</span>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-label text-slate-500 uppercase">14:20:11</span>
+<span class="text-[10px] bg-secondary/10 text-secondary px-2 rounded-full border border-secondary/20">Entity</span>
+</div>
+<p class="text-sm text-on-surface">Extracted preference: <span class="text-white font-medium">"User prefers asynchronous communication"</span></p>
+<p class="text-[11px] text-slate-500 mt-1 italic">Confidence Score: 0.982</p>
+</div>
+</div>
+<div class="bg-surface-container-low border-l-2 border-secondary p-3 flex items-start gap-4 transition-all hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-secondary mt-1">check_circle</span>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-label text-slate-500 uppercase">14:20:05</span>
+<span class="text-[10px] bg-secondary/10 text-secondary px-2 rounded-full border border-secondary/20">Relation</span>
+</div>
+<p class="text-sm text-on-surface">Linked <span class="text-white font-medium">Project_X</span> to <span class="text-white font-medium">User_Alpha</span> (Owner)</p>
+<p class="text-[11px] text-slate-500 mt-1 italic">Graph update successful</p>
+</div>
+</div>
+<div class="bg-surface-container-low border-l-2 border-primary-fixed-dim p-3 flex items-start gap-4 transition-all hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-primary-fixed-dim mt-1">info</span>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-label text-slate-500 uppercase">14:19:58</span>
+<span class="text-[10px] bg-primary-fixed-dim/10 text-primary-fixed-dim px-2 rounded-full border border-primary-fixed-dim/20">Metadata</span>
+</div>
+<p class="text-sm text-on-surface">Temporal Anchor set: <span class="text-white font-medium">Fiscal Year 2024</span></p>
+</div>
+</div>
+<div class="bg-surface-container-lowest border-l-2 border-outline-variant p-3 flex items-start gap-4 opacity-50">
+<span class="material-symbols-outlined text-slate-500 mt-1">pending</span>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-label text-slate-500 uppercase">14:18:44</span>
+</div>
+<p class="text-sm text-slate-400">Processing input stream segment #0092...</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="ml-64 bg-[#0d0e12] dark:bg-[#0d0e12] w-auto py-8 mt-auto border-t border-[#1f1f24]">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 w-full gap-4">
+<div class="flex items-center gap-4">
+<span class="text-white font-bold font-['Space_Grotesk']">DeepContext</span>
+<span class="text-slate-500 font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest">© 2024 DeepContext Engine</span>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">GitHub</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Documentation</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Status</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Privacy</a>
+</div>
+</div>
+</footer>
+</body></html>

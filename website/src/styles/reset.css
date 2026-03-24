@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after {
   margin: 0;
@@ -19,10 +19,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, .card, .sidebar, .navbar, .footer {
-  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
-}
-
 img, video, svg {
   max-width: 100%;
   display: block;
@@ -40,7 +36,24 @@ a:hover {
 
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::selection {
+  background: rgba(212, 98, 43, 0.2);
+  color: var(--text-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
