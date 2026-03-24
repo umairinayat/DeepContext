@@ -49,3 +49,4 @@ alembic/versions/*.pyc
 .claude/
 everything-claude-code/
 .claude/
+.claude/
