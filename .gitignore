@@ -48,3 +48,4 @@ alembic/versions/*.pyc
 .gstack/
 .claude/
 everything-claude-code/
+.claude/
