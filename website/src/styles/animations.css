@@ -1,65 +1,68 @@
-/* Hero gradient mesh — floating blobs */
-@keyframes float-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
+/* ===== SCROLL REVEAL ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
-@keyframes float-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-40px, 30px) scale(1.1); }
-  66% { transform: translate(25px, -40px) scale(0.9); }
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-@keyframes float-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, 40px) scale(0.95); }
-  66% { transform: translate(-35px, -25px) scale(1.05); }
+/* Staggered children */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 }
 
-.hero-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
+.reveal-stagger.visible > *:nth-child(1) { transition-delay: 0ms; }
+.reveal-stagger.visible > *:nth-child(2) { transition-delay: 100ms; }
+.reveal-stagger.visible > *:nth-child(3) { transition-delay: 200ms; }
+.reveal-stagger.visible > *:nth-child(4) { transition-delay: 300ms; }
+.reveal-stagger.visible > *:nth-child(5) { transition-delay: 400ms; }
+.reveal-stagger.visible > *:nth-child(6) { transition-delay: 500ms; }
+
+.reveal-stagger.visible > * {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.hero-blob-1 {
-  width: 600px;
-  height: 600px;
-  background: rgba(108, 92, 231, 0.06);
-  top: -10%;
-  left: -5%;
-  animation: float-1 20s ease-in-out infinite;
+/* ===== TERMINAL TYPING ANIMATION ===== */
+@keyframes blink-cursor {
+  0%, 50% { border-right-color: var(--accent); }
+  51%, 100% { border-right-color: transparent; }
 }
 
-.hero-blob-2 {
-  width: 500px;
-  height: 500px;
-  background: rgba(79, 140, 255, 0.05);
-  top: 20%;
-  right: -10%;
-  animation: float-2 25s ease-in-out infinite;
+.terminal-cursor {
+  border-right: 2px solid var(--accent);
+  animation: blink-cursor 1s step-end infinite;
 }
 
-.hero-blob-3 {
-  width: 400px;
-  height: 400px;
-  background: rgba(108, 92, 231, 0.04);
-  bottom: -5%;
-  left: 30%;
-  animation: float-3 15s ease-in-out infinite;
+@keyframes typewriter-line {
+  from { width: 0; }
+  to { width: 100%; }
 }
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #6C5CE7, #4F8CFF);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* ===== LOGO MARQUEE ===== */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-/* Slide in from right (desktop slide panel) */
+.marquee-track {
+  display: flex;
+  gap: 4rem;
+  animation: marquee 25s linear infinite;
+  width: max-content;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ===== SLIDE ANIMATIONS ===== */
 @keyframes slide-in-right {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -70,7 +73,6 @@
   to { transform: translateX(100%); }
 }
 
-/* Slide up from bottom (mobile sheet) */
 @keyframes slide-in-up {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
@@ -81,7 +83,7 @@
   to { transform: translateY(100%); }
 }
 
-/* Fade in overlay backdrop */
+/* ===== FADE ===== */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -92,7 +94,7 @@
   to { opacity: 0; }
 }
 
-/* Spin animation for loading */
+/* ===== SPIN ===== */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -100,4 +102,74 @@
 
 .spinner {
   animation: spin 1s linear infinite;
+}
+
+/* ===== PULSE ===== */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ===== SHIMMER (skeleton) ===== */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== FLOAT for decorative elements ===== */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ===== CORNER PLUS DECORATION (HydraDB style) ===== */
+.corner-plus {
+  position: relative;
+}
+
+.corner-plus::before,
+.corner-plus::after {
+  content: '+';
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--border);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.corner-plus::before {
+  top: -7px;
+  left: -7px;
+}
+
+.corner-plus::after {
+  top: -7px;
+  right: -7px;
+}
+
+/* Extra corners via wrapper children */
+.corner-plus-bottom::before,
+.corner-plus-bottom::after {
+  content: '+';
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--border);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.corner-plus-bottom::before {
+  bottom: -7px;
+  left: -7px;
+}
+
+.corner-plus-bottom::after {
+  bottom: -7px;
+  right: -7px;
 }

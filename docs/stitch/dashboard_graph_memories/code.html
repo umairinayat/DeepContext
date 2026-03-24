@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DeepContext | Sovereign Engine Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-container": "#93000a",
+              "on-error": "#690005",
+              "inverse-on-surface": "#2f3035",
+              "surface-container-high": "#292a2e",
+              "surface": "#121317",
+              "surface-bright": "#38393e",
+              "background": "#121317",
+              "secondary-container": "#007774",
+              "surface-container-low": "#1a1b20",
+              "primary-fixed": "#62f9ee",
+              "surface-dim": "#121317",
+              "on-tertiary": "#393000",
+              "on-surface": "#e3e2e8",
+              "surface-container": "#1f1f24",
+              "on-secondary-container": "#a1fcf7",
+              "on-primary-container": "#00716b",
+              "inverse-surface": "#e3e2e8",
+              "secondary-fixed": "#98f2ed",
+              "surface-tint": "#3cdcd1",
+              "surface-container-lowest": "#0d0e12",
+              "tertiary": "#ffffff",
+              "error": "#ffb4ab",
+              "secondary": "#7bd6d1",
+              "primary-container": "#62f9ee",
+              "on-secondary-fixed": "#00201f",
+              "outline-variant": "#3c4948",
+              "secondary-fixed-dim": "#7bd6d1",
+              "on-error-container": "#ffdad6",
+              "inverse-primary": "#006a64",
+              "on-secondary": "#003735",
+              "primary-fixed-dim": "#3cdcd1",
+              "on-tertiary-fixed-variant": "#524700",
+              "primary": "#ffffff",
+              "tertiary-fixed-dim": "#dec74a",
+              "tertiary-container": "#fce363",
+              "on-primary-fixed-variant": "#00504b",
+              "on-tertiary-fixed": "#211b00",
+              "on-primary": "#003734",
+              "outline": "#859491",
+              "on-surface-variant": "#bacac7",
+              "on-secondary-fixed-variant": "#00504d",
+              "on-background": "#e3e2e8",
+              "on-tertiary-container": "#736400",
+              "on-primary-fixed": "#00201e",
+              "tertiary-fixed": "#fce363",
+              "surface-variant": "#343439",
+              "surface-container-highest": "#343439"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #121317;
+            color: #e3e2e8;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface overflow-hidden">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-40 bg-surface-container-low flex flex-col h-full py-6">
+<div class="px-6 mb-8">
+<h1 class="font-['Space_Grotesk'] font-bold text-white text-xl tracking-tighter">DeepContext</h1>
+<p class="text-[10px] font-['JetBrains_Mono'] uppercase tracking-widest text-secondary mt-1">Sovereign Engine</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="font-body text-sm">Stats</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="shutter_speed">shutter_speed</span>
+<span class="font-body text-sm">Chat/Extract</span>
+</a>
+<!-- Active State: Knowledge Graph -->
+<a class="bg-surface-container-high text-secondary border-l-4 border-secondary px-4 py-3 flex items-center gap-3 translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="hub" style="font-variation-settings: 'FILL' 1;">hub</span>
+<span class="font-body text-sm font-bold">Knowledge Graph</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-body text-sm">Memories</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="cyclone">cyclone</span>
+<span class="font-body text-sm">Lifecycle</span>
+</a>
+<a class="text-slate-400 px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high hover:text-white transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body text-sm">Settings</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-primary text-on-primary py-3 rounded-DEFAULT font-headline font-bold text-sm tracking-tight flex items-center justify-center gap-2 hover:bg-primary-fixed-dim transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Extraction
+            </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface-container-low flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-400 font-medium hover:text-white transition-colors font-headline" href="#">Docs</a>
+<a class="text-secondary font-bold border-b-2 border-secondary pb-1 font-headline" href="#">Dashboard</a>
+<a class="text-slate-400 font-medium hover:text-white transition-colors font-headline" href="#">GitHub</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-lowest border-none text-xs font-label w-64 pl-10 pr-4 py-2 focus:ring-1 focus:ring-secondary rounded-DEFAULT text-on-surface" placeholder="GLOBAL_SEARCH_..." type="text"/>
+</div>
+<button class="text-slate-400 hover:text-secondary transition-colors">
+<span class="material-symbols-outlined" data-icon="dark_mode">dark_mode</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-[10px] font-bold text-on-secondary-container">
+                    DC
+                </div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-8 space-y-8 flex-1 overflow-y-auto">
+<!-- Knowledge Graph Section -->
+<section class="grid grid-cols-12 gap-6 h-[500px]">
+<div class="col-span-12 bg-surface-container relative flex flex-col overflow-hidden">
+<!-- Graph Header -->
+<div class="p-4 flex justify-between items-center z-10 bg-surface-container/80 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<h2 class="font-headline font-bold text-white text-lg tracking-tight uppercase">Graph_Visualizer_v4.0</h2>
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container-lowest rounded-DEFAULT border border-outline-variant/15">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-[10px] font-label text-on-surface-variant uppercase">Engine Online</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="bg-surface-container-lowest p-1 rounded-DEFAULT flex border border-outline-variant/15">
+<button class="px-3 py-1 text-[10px] font-label bg-secondary text-on-secondary rounded-DEFAULT">2D</button>
+<button class="px-3 py-1 text-[10px] font-label text-slate-500 hover:text-white">3D</button>
+</div>
+<div class="relative ml-4">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs" data-icon="filter_list">filter_list</span>
+<input class="bg-surface-container-lowest border-none text-[10px] font-label w-48 pl-8 pr-4 py-1.5 focus:ring-1 focus:ring-secondary rounded-DEFAULT" placeholder="NODE_IDENTIFIER" type="text"/>
+</div>
+</div>
+</div>
+<!-- Interactive Graph Placeholder -->
+<div class="flex-1 relative bg-surface-container-lowest overflow-hidden">
+<div class="absolute inset-0 opacity-20 pointer-events-none" data-alt="Subtle cyan grid pattern for technical UI" style="background-image: radial-gradient(circle at 2px 2px, #3cdcd1 1px, transparent 0); background-size: 40px 40px;"></div>
+<!-- Simulated Nodes -->
+<div class="absolute inset-0 flex items-center justify-center">
+<!-- SVG Connections -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none">
+<line stroke="#3c4948" stroke-dasharray="4 4" stroke-width="1" x1="50%" x2="40%" y1="50%" y2="30%"></line>
+<line stroke="#3c4948" stroke-width="1" x1="50%" x2="60%" y1="50%" y2="40%"></line>
+<line stroke="#3c4948" stroke-width="1" x1="50%" x2="45%" y1="50%" y2="70%"></line>
+<line stroke="#3c4948" stroke-dasharray="4 4" stroke-width="1" x1="40%" x2="30%" y1="30%" y2="40%"></line>
+</svg>
+<!-- Node: User -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-secondary/20 border-2 border-secondary flex items-center justify-center shadow-[0_0_20px_rgba(123,214,209,0.3)] group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-secondary" data-icon="person" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+<div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
+<p class="text-[10px] font-label text-white bg-surface-container-high px-2 py-0.5 rounded-sm">USER_ROOT</p>
+</div>
+</div>
+<!-- Node: Entity 1 -->
+<div class="absolute top-[30%] left-[40%] group cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary flex items-center justify-center group-hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="apartment">apartment</span>
+</div>
+<div class="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap">
+<p class="text-[9px] font-label text-on-surface-variant">CORP_ENTITY_A</p>
+</div>
+</div>
+<!-- Node: Fact 1 -->
+<div class="absolute top-[40%] left-[60%] group cursor-pointer">
+<div class="w-6 h-6 rounded-sm bg-tertiary-fixed/10 border border-tertiary-fixed flex items-center justify-center group-hover:bg-tertiary-fixed/20 transition-all rotate-45">
+<span class="material-symbols-outlined text-tertiary-fixed text-[12px] -rotate-45" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="absolute top-full mt-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+<p class="text-[9px] font-label text-on-surface-variant">FACT_VERIFIED_722</p>
+</div>
+</div>
+<!-- Node: Entity 2 -->
+<div class="absolute top-[70%] left-[45%] group cursor-pointer">
+<div class="w-8 h-8 rounded-full bg-primary/10 border border-primary flex items-center justify-center group-hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="public">public</span>
+</div>
+<div class="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap">
+<p class="text-[9px] font-label text-on-surface-variant">GEO_LOCATION_ID</p>
+</div>
+</div>
+</div>
+<!-- Graph Legend -->
+<div class="absolute bottom-6 left-6 flex flex-col gap-2 bg-surface-container-high/60 backdrop-blur-sm p-4 rounded-DEFAULT border border-outline-variant/15">
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-[10px] font-label text-on-surface">User Node</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[10px] font-label text-on-surface">Entity Node</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="w-2 h-2 rounded-sm bg-tertiary-fixed"></span>
+<span class="text-[10px] font-label text-on-surface">Validated Fact</span>
+</div>
+</div>
+<!-- Graph Controls -->
+<div class="absolute bottom-6 right-6 flex flex-col gap-2">
+<button class="w-8 h-8 bg-surface-container-high border border-outline-variant/15 flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+</button>
+<button class="w-8 h-8 bg-surface-container-high border border-outline-variant/15 flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="remove">remove</span>
+</button>
+<button class="w-8 h-8 bg-surface-container-high border border-outline-variant/15 flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Memories Section -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline font-bold text-white text-xl tracking-tight uppercase">Sovereign_Memories</h2>
+<p class="text-xs text-slate-500 font-body mt-1">LTM_BUFFER_STATE: STABLE // TOTAL_FRAGMENTS: 1,204</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm" data-icon="search">search</span>
+<input class="bg-surface-container border-none text-[10px] font-label w-64 pl-10 pr-4 py-2 focus:ring-1 focus:ring-secondary rounded-DEFAULT" placeholder="QUERY_FACTS..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant/15 hover:bg-surface-container-high transition-colors text-[10px] font-label uppercase tracking-wider">
+<span class="material-symbols-outlined text-xs" data-icon="download">download</span>
+                            Export_CSV
+                        </button>
+</div>
+</div>
+<div class="bg-surface-container-lowest overflow-hidden border border-outline-variant/10">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/10">
+<th class="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-secondary">Fact_ID</th>
+<th class="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-secondary">Memory_Content</th>
+<th class="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-secondary text-center">Source_Origin</th>
+<th class="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-secondary text-right">Timestamp</th>
+<th class="px-6 py-4 text-[10px] font-label uppercase tracking-widest text-secondary text-right">Confidence</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4 font-label text-[10px] text-on-surface-variant">#MEM-0x882</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-body text-white">Project Artemis milestone 4 finalized on Q3 target.</span>
+<span class="text-[9px] font-label text-slate-500 uppercase mt-0.5">Context: Financial_Review</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 bg-surface-container-high text-[10px] font-label text-primary-fixed rounded-sm">EMAIL_INGEST</span>
+</td>
+<td class="px-6 py-4 text-right font-label text-[10px] text-slate-400">2024.05.22 14:02:11</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 h-1 bg-surface-container-high overflow-hidden rounded-full">
+<div class="h-full bg-secondary w-[98%]"></div>
+</div>
+<span class="text-[10px] font-label text-secondary">0.98</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4 font-label text-[10px] text-on-surface-variant">#MEM-0x7F1</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-body text-white">Subject expressed preference for high-contrast dark themes.</span>
+<span class="text-[9px] font-label text-slate-500 uppercase mt-0.5">Context: User_Persona</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 bg-surface-container-high text-[10px] font-label text-primary-fixed rounded-sm">CHAT_STREAM</span>
+</td>
+<td class="px-6 py-4 text-right font-label text-[10px] text-slate-400">2024.05.21 09:15:44</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 h-1 bg-surface-container-high overflow-hidden rounded-full">
+<div class="h-full bg-secondary w-[85%]"></div>
+</div>
+<span class="text-[10px] font-label text-secondary">0.85</span>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-6 py-4 font-label text-[10px] text-on-surface-variant">#MEM-0x3A2</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-body text-white">System architecture uses RAG with Vector DB indexing.</span>
+<span class="text-[9px] font-label text-slate-500 uppercase mt-0.5">Context: Tech_Stack</span>
+</div>
+</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-0.5 bg-surface-container-high text-[10px] font-label text-primary-fixed rounded-sm">DOC_EXTRACT</span>
+</td>
+<td class="px-6 py-4 text-right font-label text-[10px] text-slate-400">2024.05.20 18:33:01</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<div class="w-16 h-1 bg-surface-container-high overflow-hidden rounded-full">
+<div class="h-full bg-secondary w-[92%]"></div>
+</div>
+<span class="text-[10px] font-label text-secondary">0.92</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="px-6 py-4 bg-surface-container-low flex justify-between items-center border-t border-outline-variant/10">
+<span class="text-[10px] font-label text-slate-500">SHOWING 1-10 OF 1,204 ENTRIES</span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center bg-surface-container-high text-white text-[10px] font-label">1</button>
+<button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white text-[10px] font-label">2</button>
+<button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white text-[10px] font-label">3</button>
+<span class="text-slate-500 px-2">...</span>
+<button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white text-[10px] font-label">121</button>
+<button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest w-full py-6 mt-auto flex flex-col md:flex-row justify-between items-center px-8 border-t border-outline-variant/15">
+<div class="flex items-center gap-4">
+<span class="text-white font-bold font-headline text-sm">DeepContext Engine</span>
+<span class="text-slate-700">|</span>
+<span class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500">© 2024 DeepContext Engine</span>
+</div>
+<div class="flex items-center gap-6 mt-4 md:mt-0">
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500 hover:text-secondary transition-colors" href="#">GitHub</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500 hover:text-secondary transition-colors" href="#">Documentation</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500 hover:text-secondary transition-colors" href="#">Status</a>
+<a class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500 hover:text-secondary transition-colors" href="#">Privacy</a>
+</div>
+</footer>
+</main>
+</body></html>

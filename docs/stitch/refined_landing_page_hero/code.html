@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DeepContext | Sovereign Engine</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-container": "#93000a",
+              "on-error": "#690005",
+              "inverse-on-surface": "#2f3035",
+              "surface-container-high": "#292a2e",
+              "surface": "#121317",
+              "surface-bright": "#38393e",
+              "background": "#121317",
+              "secondary-container": "#007774",
+              "surface-container-low": "#1a1b20",
+              "primary-fixed": "#62f9ee",
+              "surface-dim": "#121317",
+              "on-tertiary": "#393000",
+              "on-surface": "#e3e2e8",
+              "surface-container": "#1f1f24",
+              "on-secondary-container": "#a1fcf7",
+              "on-primary-container": "#00716b",
+              "inverse-surface": "#e3e2e8",
+              "secondary-fixed": "#98f2ed",
+              "surface-tint": "#3cdcd1",
+              "surface-container-lowest": "#0d0e12",
+              "tertiary": "#ffffff",
+              "error": "#ffb4ab",
+              "secondary": "#7bd6d1",
+              "primary-container": "#62f9ee",
+              "on-secondary-fixed": "#00201f",
+              "outline-variant": "#3c4948",
+              "secondary-fixed-dim": "#7bd6d1",
+              "on-error-container": "#ffdad6",
+              "inverse-primary": "#006a64",
+              "on-secondary": "#003735",
+              "primary-fixed-dim": "#3cdcd1",
+              "on-tertiary-fixed-variant": "#524700",
+              "primary": "#ffffff",
+              "tertiary-fixed-dim": "#dec74a",
+              "tertiary-container": "#fce363",
+              "on-primary-fixed-variant": "#00504b",
+              "on-tertiary-fixed": "#211b00",
+              "on-primary": "#003734",
+              "outline": "#859491",
+              "on-surface-variant": "#bacac7",
+              "on-secondary-fixed-variant": "#00504d",
+              "on-background": "#e3e2e8",
+              "on-tertiary-container": "#736400",
+              "on-primary-fixed": "#00201e",
+              "tertiary-fixed": "#fce363",
+              "surface-variant": "#343439",
+              "surface-container-highest": "#343439"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: normal;
+        word-wrap: normal;
+        white-space: nowrap;
+        direction: ltr;
+      }
+      .machined-gradient {
+        background: linear-gradient(45deg, #ffffff 0%, #3cdcd1 100%);
+      }
+      body {
+        background-color: #121317;
+        color: #e3e2e8;
+      }
+      .grid-pattern {
+        background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+        background-size: 40px 40px;
+      }
+      .moving-dots {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .dot {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: #3cdcd1;
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: float-up 15s infinite linear;
+      }
+      @keyframes float-up {
+        0% { transform: translateY(100vh) scale(0); opacity: 0; }
+        50% { opacity: 0.5; }
+        100% { transform: translateY(-100px) scale(1); opacity: 0; }
+      }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="bg-[#121317] dark:bg-[#121317] docked full-width top-0 z-50 fixed border-b border-outline-variant/10">
+<div class="flex justify-between items-center w-full px-6 py-4 mx-auto max-w-7xl">
+<div class="text-2xl font-bold text-white tracking-tighter font-['Space_Grotesk']">
+            DeepContext
+        </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-slate-400 font-medium hover:text-white transition-colors" href="#">Docs</a>
+<a class="text-slate-400 font-medium hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="text-slate-400 font-medium hover:text-white transition-colors" href="#">GitHub</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 p-1.5 px-3 rounded-full bg-surface-container-low border border-outline-variant/20 text-slate-400 hover:text-[#66fcf1] transition-all group">
+<span class="material-symbols-outlined text-[18px]" data-icon="light_mode">light_mode</span>
+<div class="w-8 h-4 bg-surface-container-highest rounded-full relative">
+<div class="absolute right-1 top-1 w-2 h-2 bg-secondary rounded-full"></div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-secondary" data-icon="dark_mode">dark_mode</span>
+</button>
+<button class="bg-primary text-on-primary px-4 py-1.5 text-sm font-bold rounded hover:bg-primary-fixed-dim transition-all">
+                Launch Engine
+            </button>
+</div>
+</div>
+</nav>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative px-6 py-24 md:py-32 max-w-7xl mx-auto overflow-hidden">
+<div class="grid-pattern absolute inset-0 -z-20 opacity-40"></div>
+<div class="moving-dots">
+<div class="dot" style="left: 10%; animation-delay: 0s;"></div>
+<div class="dot" style="left: 30%; animation-delay: 5s;"></div>
+<div class="dot" style="left: 50%; animation-delay: 2s;"></div>
+<div class="dot" style="left: 70%; animation-delay: 8s;"></div>
+<div class="dot" style="left: 90%; animation-delay: 4s;"></div>
+</div>
+<div class="absolute top-0 right-0 -z-10 w-1/2 h-full opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-surface-tint via-transparent to-transparent blur-3xl"></div>
+<div class="flex flex-col md:flex-row items-center gap-16">
+<div class="flex-1 space-y-8">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-surface-container-low border-l-2 border-secondary text-secondary font-label text-[10px] uppercase tracking-widest">
+                    Protocol v4.0.2 Stable
+                </div>
+<h1 class="font-headline font-bold text-5xl md:text-7xl leading-[1.1] tracking-tight text-white">
+                    Give Your AI Agents <br/><span class="text-secondary">Context + Memory</span>
+</h1>
+<p class="text-on-surface-variant text-lg md:text-xl max-w-xl leading-relaxed">
+                    Persistent memory that grows, connects, and evolves with every conversation. Graph-aware hybrid retrieval with lifecycle management.
+                </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="machined-gradient text-on-primary font-bold px-8 py-4 rounded transition-all active:scale-95">
+                        Get Started
+                    </button>
+<button class="bg-transparent border border-outline-variant/30 text-white font-bold px-8 py-4 rounded hover:bg-surface-container transition-all">
+                        View Docs
+                    </button>
+</div>
+</div>
+<div class="flex-1 w-full max-w-xl">
+<div class="bg-surface-container-low p-1 rounded-lg shadow-2xl relative">
+<div class="absolute -top-4 -right-4 bg-secondary-container text-on-secondary-container text-[10px] font-label px-2 py-1 rounded uppercase tracking-tighter animate-pulse">Live Stream</div>
+<div class="bg-surface-container-lowest p-6 rounded-md font-label text-sm text-secondary-fixed border border-outline-variant/10">
+<div class="flex items-center gap-2 mb-4 text-xs text-slate-500">
+<span class="w-3 h-3 rounded-full bg-error/40"></span>
+<span class="w-3 h-3 rounded-full bg-tertiary-container/40"></span>
+<span class="w-3 h-3 rounded-full bg-secondary/40"></span>
+<span class="ml-2">agent_context_stream.py</span>
+</div>
+<code class="block text-secondary-fixed-dim">
+<span class="text-slate-500"># Initializing sovereign engine</span><br/>
+<span class="text-primary">import</span> deepcontext <span class="text-primary">as</span> dc<br/><br/>
+                            engine = dc.Engine(api_key=<span class="text-tertiary-container">"sk-vx_992"</span>)<br/>
+<span class="text-slate-500"># Attach memory to agent</span><br/>
+                            agent.plug(engine.persistent_layer)<br/><br/>
+<span class="text-primary">await</span> engine.ingest(raw_data)<br/>
+                            response = <span class="text-primary">await</span> agent.query(<span class="text-tertiary-container">"Recall Q3 metrics"</span>)<br/>
+<span class="text-slate-500">&gt;&gt; Context retrieved via Hybrid Graph</span>
+</code>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="px-6 py-24 bg-surface-container-low/50">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-end mb-16 gap-4">
+<div class="space-y-2">
+<p class="font-label text-secondary text-xs uppercase tracking-[0.2em]">Core Architecture</p>
+<h2 class="font-headline font-bold text-3xl md:text-4xl text-white">Sovereign Capabilities</h2>
+</div>
+<div class="hidden md:block h-px flex-1 bg-outline-variant/10 mx-8 mb-4"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Vector Storage -->
+<div class="md:col-span-8 bg-surface-container p-8 rounded-lg hover:bg-surface-container-high transition-colors group">
+<div class="flex flex-col h-full justify-between gap-12">
+<div>
+<span class="material-symbols-outlined text-secondary text-4xl mb-6" data-icon="database">database</span>
+<h3 class="text-2xl font-bold text-white mb-4">Vector Storage</h3>
+<p class="text-on-surface-variant leading-relaxed max-w-md">
+                                Ultra-low latency embedding retrieval optimized for high-dimensional semantic search. Native support for multi-modal embedding models.
+                            </p>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-3 py-1 rounded bg-surface-container-lowest text-slate-400 font-label text-[10px]">HNSW</span>
+<span class="px-3 py-1 rounded bg-surface-container-lowest text-slate-400 font-label text-[10px]">COSINE SIM</span>
+<span class="px-3 py-1 rounded bg-surface-container-lowest text-slate-400 font-label text-[10px]">AUTO-SCALING</span>
+</div>
+</div>
+</div>
+<!-- Knowledge Graph -->
+<div class="md:col-span-4 bg-surface-container p-8 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-secondary text-4xl mb-6" data-icon="hub">hub</span>
+<h3 class="text-2xl font-bold text-white mb-4">Knowledge Graph</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                        Maps entities and relationships to provide structured reasoning alongside semantic retrieval.
+                    </p>
+</div>
+<!-- Hybrid Retrieval -->
+<div class="md:col-span-4 bg-surface-container p-8 rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-secondary text-4xl mb-6" data-icon="filter_list">filter_list</span>
+<h3 class="text-2xl font-bold text-white mb-4">Hybrid Retrieval</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                        BM25 + Semantic Search + Graph Traversal fused into a single ranking algorithm for precision.
+                    </p>
+</div>
+<!-- Lifecycle Management -->
+<div class="md:col-span-8 bg-surface-container p-8 rounded-lg hover:bg-surface-container-high transition-colors group">
+<div class="flex flex-col md:flex-row gap-12 items-center">
+<div class="flex-1">
+<span class="material-symbols-outlined text-secondary text-4xl mb-6" data-icon="cyclone">cyclone</span>
+<h3 class="text-2xl font-bold text-white mb-4">Lifecycle Management</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                                Automated memory consolidation, summarization, and pruning. The engine learns what to forget so the context stays relevant.
+                            </p>
+</div>
+<div class="flex-1 bg-surface-container-lowest rounded p-4 w-full h-32 flex items-center justify-center">
+<div class="w-full space-y-3">
+<div class="h-1 bg-secondary w-full rounded-full opacity-30"></div>
+<div class="h-1 bg-secondary w-3/4 rounded-full opacity-60"></div>
+<div class="h-1 bg-secondary w-1/2 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Architecture Diagram -->
+<section class="px-6 py-32 max-w-7xl mx-auto">
+<div class="text-center max-w-2xl mx-auto mb-20">
+<h2 class="font-headline font-bold text-4xl text-white mb-6">Hybrid Engine Architecture</h2>
+<p class="text-on-surface-variant">Intelligent memory routing that bridges unstructured data and structured logic.</p>
+</div>
+<div class="relative">
+<div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+<!-- Source -->
+<div class="bg-surface-container p-6 rounded border border-outline-variant/10 text-center">
+<span class="font-label text-[10px] text-slate-500 mb-4 block uppercase tracking-widest">Input</span>
+<span class="material-symbols-outlined text-white text-2xl mb-2" data-icon="sensors">sensors</span>
+<div class="text-white font-bold text-sm">Event Stream</div>
+</div>
+<div class="hidden md:flex justify-center text-slate-700 animate-pulse">
+<span class="material-symbols-outlined" data-icon="trending_flat">trending_flat</span>
+</div>
+<!-- Processing Core -->
+<div class="md:col-span-1 bg-surface-container-high p-8 border-2 border-secondary/50 rounded-xl text-center shadow-[0_0_30px_rgba(60,220,209,0.15)] relative">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">Hybrid Processor</div>
+<span class="material-symbols-outlined text-secondary text-4xl mb-3" data-icon="analytics">analytics</span>
+<div class="text-white font-bold text-lg">DeepContext Core</div>
+<div class="mt-3 flex justify-center gap-1">
+<span class="w-1.5 h-1.5 bg-secondary rounded-full"></span>
+<span class="w-1.5 h-1.5 bg-secondary rounded-full opacity-50"></span>
+<span class="w-1.5 h-1.5 bg-secondary rounded-full opacity-25"></span>
+</div>
+</div>
+<div class="hidden md:flex flex-col items-center justify-center gap-8 h-full">
+<div class="flex items-center text-secondary/40">
+<span class="material-symbols-outlined rotate-[-45deg]" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<div class="flex items-center text-secondary/40">
+<span class="material-symbols-outlined rotate-[45deg]" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Data Tiers -->
+<div class="space-y-4">
+<div class="bg-surface-container-low p-4 border-l-4 border-secondary/60 rounded flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="database">database</span>
+<div>
+<div class="text-white font-bold text-xs">Vector Store</div>
+<div class="text-slate-500 text-[10px]">Semantic Context</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 border-l-4 border-secondary rounded flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="hub">hub</span>
+<div>
+<div class="text-white font-bold text-xs">Knowledge Graph</div>
+<div class="text-slate-500 text-[10px]">Relational Logic</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-12 max-w-3xl mx-auto p-6 bg-surface-container-lowest border border-outline-variant/10 rounded-lg flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="psychology">psychology</span>
+</div>
+<div>
+<div class="text-white font-bold">Augmented LLM Output</div>
+<div class="text-slate-500 text-xs">Context-rich, grounded responses</div>
+</div>
+</div>
+<div class="h-px md:h-8 w-full md:w-px bg-outline-variant/20"></div>
+<div class="flex gap-4">
+<span class="px-3 py-1 rounded bg-surface-container text-secondary text-[10px] font-label">RAG+</span>
+<span class="px-3 py-1 rounded bg-surface-container text-secondary text-[10px] font-label">NEURAL-RELATIONAL</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Install Banner -->
+<section class="px-6 py-24 bg-surface-container-lowest">
+<div class="max-w-5xl mx-auto bg-gradient-to-br from-surface-container to-surface-container-high p-px rounded-2xl overflow-hidden shadow-2xl">
+<div class="p-8 md:p-16 text-center bg-surface-container/95">
+<h3 class="font-headline font-bold text-4xl md:text-5xl text-white mb-4 tracking-tight">Deploy Sovereign Memory in Minutes.</h3>
+<p class="text-on-surface-variant mb-12 max-w-xl mx-auto text-lg">Scale your agents from stateless bots to persistent digital entities with a single API call.</p>
+<div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+<div class="flex-1 w-full max-w-md bg-surface-container-lowest p-5 rounded-lg flex items-center justify-between group border border-outline-variant/10 shadow-inner">
+<div class="flex items-center gap-3">
+<span class="text-slate-600 font-label text-sm">$</span>
+<code class="font-label text-secondary-fixed-dim select-all text-sm">pip install deepcontext</code>
+</div>
+<button class="text-slate-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+<button class="bg-white text-[#121317] font-bold px-10 py-5 rounded-lg hover:bg-[#3cdcd1] hover:shadow-[0_0_40px_rgba(60,220,209,0.3)] transition-all w-full md:w-auto text-lg">
+                        Get API Key
+                    </button>
+</div>
+<div class="mt-12 flex flex-wrap justify-center items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all">
+<span class="font-label text-xs font-bold text-white tracking-widest uppercase">OpenAI</span>
+<span class="font-label text-xs font-bold text-white tracking-widest uppercase">Anthropic</span>
+<span class="font-label text-xs font-bold text-white tracking-widest uppercase">LlamaIndex</span>
+<span class="font-label text-xs font-bold text-white tracking-widest uppercase">LangChain</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#0d0e12] dark:bg-[#0d0e12] w-full py-12 mt-auto border-t border-[#1f1f24]">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 w-full max-w-7xl mx-auto gap-8">
+<div class="flex flex-col gap-2">
+<div class="text-white font-bold text-lg font-['Space_Grotesk'] tracking-tight">DeepContext</div>
+<p class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-slate-500">© 2024 DeepContext Engine</p>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">GitHub</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Documentation</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Status</a>
+<a class="text-slate-500 hover:text-[#66fcf1] transition-colors font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest" href="#">Privacy</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-['JetBrains_Mono'] text-[10px] uppercase tracking-widest text-secondary">All Systems Operational</span>
+</div>
+</div>
+</footer>
+</body></html>

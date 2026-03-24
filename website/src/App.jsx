@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -12,9 +12,12 @@ import GraphPage from './pages/dashboard/GraphPage'
 import MemoriesPage from './pages/dashboard/MemoriesPage'
 import LifecyclePage from './pages/dashboard/LifecyclePage'
 
-export default function App() {
+function AppRoutes() {
+  const location = useLocation()
+  const isDashboard = location.pathname.startsWith('/dashboard')
+
   return (
-    <ThemeProvider>
+    <>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -29,7 +32,15 @@ export default function App() {
           <Route path="lifecycle" element={<LifecyclePage />} />
         </Route>
       </Routes>
-      <Footer />
+      {!isDashboard && <Footer />}
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
     </ThemeProvider>
   )
 }

@@ -45,3 +45,4 @@ alembic/versions/*.pyc
 .agent/
 
 .test/
+.gstack/
